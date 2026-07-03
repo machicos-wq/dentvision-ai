@@ -3,31 +3,25 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DentVision AI</title>
+  <title>DentVision AI v1.2</title>
   <meta name="theme-color" content="#0f172a">
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json?v=12">
+  <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
   <main class="app">
     <section class="hero">
-      <p class="badge">DentVision AI · PWA</p>
+      <p class="badge">DentVision AI · PWA v1.2 anti-cache</p>
       <h1>Stima danni grandine</h1>
-      <p>Carica foto, inserisci dati e genera una stima rapida con richiesta cliente salvabile.</p>
+      <p>Carica foto, inserisci dati e genera una stima rapida con archivio modificabile.</p>
     </section>
 
     <section class="card">
       <h2>Dati veicolo</h2>
       <div class="grid">
-        <label>Marca e modello
-          <input id="carModel" placeholder="Es. Audi A3 2018">
-        </label>
-        <label>Targa o riferimento
-          <input id="plate" placeholder="Facoltativo">
-        </label>
-        <label>Città
-          <input id="city" placeholder="Es. Lissone">
-        </label>
+        <label>Marca e modello<input id="carModel" placeholder="Es. Audi A3 2018"></label>
+        <label>Targa o riferimento<input id="plate" placeholder="Facoltativo"></label>
+        <label>Città<input id="city" placeholder="Es. Lissone"></label>
       </div>
     </section>
 
@@ -68,7 +62,7 @@
 
     <section class="card">
       <h2>Foto</h2>
-      <p class="hint">Consiglio: luce radente, pannello intero e dettaglio ravvicinato. Foto buie = preventivo cieco, capolavoro umano ricorrente.</p>
+      <p class="hint">Consiglio: luce radente, pannello intero e dettaglio ravvicinato.</p>
       <input type="file" id="photos" accept="image/*" multiple>
       <div id="preview" class="preview"></div>
     </section>
@@ -76,14 +70,11 @@
     <section class="card">
       <h2>Cliente</h2>
       <div class="grid">
-        <label>Nome
-          <input id="name" placeholder="Nome cliente">
-        </label>
-        <label>Telefono
-          <input id="phone" placeholder="+39...">
-        </label>
+        <label>Nome<input id="name" placeholder="Nome cliente"></label>
+        <label>Telefono<input id="phone" placeholder="+39..."></label>
       </div>
       <button id="estimateBtn">Genera stima</button>
+      <button id="cancelEditBtn" class="secondary hidden">Annulla modifica</button>
     </section>
 
     <section id="result" class="result hidden">
@@ -99,10 +90,11 @@
 
     <section class="card">
       <h2>Archivio richieste</h2>
+      <input id="searchLeads" placeholder="Cerca nome, telefono, targa, auto o città...">
       <div id="leads"></div>
     </section>
   </main>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
