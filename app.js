@@ -1,9 +1,7 @@
-const APP_VERSION = "1.2-anticache";
+const APP_VERSION = "1.3-bolli-liberi";
 
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js?v=12").then(reg => {
-    reg.update();
-  });
+  navigator.serviceWorker.register("service-worker.js?v=13").then(reg => reg.update());
 }
 
 const $ = id => document.getElementById(id);
@@ -24,27 +22,45 @@ photos.addEventListener("change", () => {
 
 $("searchLeads").addEventListener("input", renderLeads);
 
+function getDentCount() {
+  const value = Number($("dents").value);
+  if (!value || value < 1) return 1;
+  return Math.round(value);
+}
+
 function estimate() {
-  const dents = Number($("dents").value);
+  const dents = getDentCount();
   const area = $("area").value;
   const size = $("size").value;
   const paint = $("paint").value;
 
-  let base = dents * 9;
+  let pricePerDent = 8.5;
+
+  if (dents > 100) pricePerDent = 7.5;
+  if (dents > 300) pricePerDent = 6.2;
+  if (dents > 700) pricePerDent = 5.3;
+  if (dents > 1200) pricePerDent = 4.8;
+
+  let base = dents * pricePerDent;
+
   if (area === "tetto") base *= 1.35;
   if (area === "fiancata") base *= 1.15;
   if (area === "multipla") base *= 1.85;
+
   if (size === "media") base *= 1.35;
   if (size === "grande") base *= 1.95;
+
   if (paint === "si") base *= 1.45;
 
-  const min = Math.round(base * 0.78 / 10) * 10;
-  const max = Math.round(base * 1.28 / 10) * 10;
+  const min = Math.round(base * 0.82 / 10) * 10;
+  const max = Math.round(base * 1.22 / 10) * 10;
 
   let severity = "lieve";
-  if (max >= 650) severity = "medio";
-  if (max >= 1300) severity = "importante";
-  return { min, max, severity };
+  if (dents >= 80 || max >= 650) severity = "medio";
+  if (dents >= 250 || max >= 1300) severity = "importante";
+  if (dents >= 700 || max >= 3500) severity = "molto importante";
+
+  return { min, max, severity, dents };
 }
 
 function buildText(data) {
@@ -55,7 +71,7 @@ Auto: ${data.carModel}
 Targa/Rif.: ${data.plate}
 Città: ${data.city}
 Zona: ${data.area}
-Bolli: ${data.dents}
+Numero bolli: ${data.dents}
 Grandezza: ${data.size}
 Vernice danneggiata: ${data.paint}
 Stima: ${data.estimate}
@@ -63,27 +79,27 @@ Gravità: ${data.severity}`;
 }
 
 $("estimateBtn").addEventListener("click", () => {
+  const e = estimate();
+
   const data = {
     date: new Date().toLocaleString("it-IT"),
     carModel: $("carModel").value || "Auto non specificata",
     plate: $("plate").value || "N/D",
     city: $("city").value || "Città non specificata",
     area: $("area").value,
-    dentsValue: $("dents").value,
-    dents: $("dents").selectedOptions[0].text,
+    dentsValue: String(e.dents),
+    dents: String(e.dents),
     size: $("size").value,
     paint: $("paint").value,
     name: $("name").value || "Cliente",
-    phone: $("phone").value || "N/D"
+    phone: $("phone").value || "N/D",
+    estimate: `${e.min}€ - ${e.max}€`,
+    severity: e.severity
   };
 
-  const e = estimate();
-  data.estimate = `${e.min}€ - ${e.max}€`;
-  data.severity = e.severity;
   lastEstimate = data;
-
   $("price").textContent = data.estimate;
-  $("diagnosis").textContent = `Danno ${e.severity}. Stima preliminare: da confermare con controllo tecnico e foto in luce radente.`;
+  $("diagnosis").textContent = `Danno ${e.severity}. Numero bolli: ${e.dents}. Stima preliminare da confermare con controllo tecnico.`;
   $("result").classList.remove("hidden");
 
   lastText = buildText(data);
@@ -148,7 +164,7 @@ function renderLeads() {
     div.className = "lead";
     div.innerHTML = `<strong>${escapeHtml(lead.name)}</strong> · ${escapeHtml(lead.carModel)}<br>
     ${escapeHtml(lead.city)} · ${escapeHtml(lead.estimate)} · ${escapeHtml(lead.date)}<br>
-    <span class="small">Tel: ${escapeHtml(lead.phone)} · Targa/Rif.: ${escapeHtml(lead.plate || "N/D")} · Danno: ${escapeHtml(lead.severity)}</span>
+    <span class="small">Tel: ${escapeHtml(lead.phone)} · Targa/Rif.: ${escapeHtml(lead.plate || "N/D")} · Bolli: ${escapeHtml(lead.dents || lead.dentsValue || "N/D")} · Danno: ${escapeHtml(lead.severity)}</span>
     <div class="lead-actions">
       <button onclick="editLead(${index})">Modifica</button>
       <button class="danger" onclick="deleteLead(${index})">Elimina</button>
@@ -168,7 +184,7 @@ function editLead(index) {
   $("plate").value = lead.plate || "";
   $("city").value = lead.city || "";
   $("area").value = lead.area || "cofano";
-  $("dents").value = lead.dentsValue || inferDentsValue(lead.dents);
+  $("dents").value = lead.dentsValue || lead.dents || "";
   $("size").value = lead.size || "piccola";
   $("paint").value = lead.paint || "no";
   $("name").value = lead.name || "";
@@ -188,20 +204,11 @@ function deleteLead(index) {
 }
 
 function clearForm() {
-  ["carModel", "plate", "city", "name", "phone"].forEach(id => $(id).value = "");
+  ["carModel", "plate", "city", "name", "phone", "dents"].forEach(id => $(id).value = "");
   $("area").value = "cofano";
-  $("dents").value = "10";
   $("size").value = "piccola";
   $("paint").value = "no";
   $("result").classList.add("hidden");
-}
-
-function inferDentsValue(label) {
-  if (!label) return "10";
-  if (label.includes("11")) return "30";
-  if (label.includes("31")) return "70";
-  if (label.includes("70")) return "120";
-  return "10";
 }
 
 function escapeHtml(value) {

@@ -3,23 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DentVision AI v1.2</title>
+  <title>DentVision AI v1.3</title>
   <meta name="theme-color" content="#0f172a">
-  <link rel="manifest" href="manifest.json?v=12">
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="manifest" href="manifest.json?v=13">
+  <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
   <main class="app">
     <section class="hero">
-      <p class="badge">DentVision AI · PWA v1.2 anti-cache</p>
+      <p class="badge">DentVision AI · PWA v1.3</p>
       <h1>Stima danni grandine</h1>
-      <p>Carica foto, inserisci dati e genera una stima rapida con archivio modificabile.</p>
+      <p>Numero bolli libero, archivio modificabile e preventivo più realistico.</p>
     </section>
 
     <section class="card">
       <h2>Dati veicolo</h2>
       <div class="grid">
-        <label>Marca e modello<input id="carModel" placeholder="Es. Audi A3 2018"></label>
+        <label>Marca e modello<input id="carModel" placeholder="Es. Opel Insignia 2014"></label>
         <label>Targa o riferimento<input id="plate" placeholder="Facoltativo"></label>
         <label>Città<input id="city" placeholder="Es. Lissone"></label>
       </div>
@@ -36,14 +36,11 @@
             <option value="multipla">Più zone</option>
           </select>
         </label>
-        <label>Numero bolli stimato
-          <select id="dents">
-            <option value="10">1 - 10</option>
-            <option value="30">11 - 30</option>
-            <option value="70">31 - 70</option>
-            <option value="120">70+</option>
-          </select>
+
+        <label>Numero bolli
+          <input id="dents" type="number" min="1" step="1" placeholder="Es. 250">
         </label>
+
         <label>Grandezza media
           <select id="size">
             <option value="piccola">Piccola</option>
@@ -51,6 +48,7 @@
             <option value="grande">Grande</option>
           </select>
         </label>
+
         <label>Vernice danneggiata?
           <select id="paint">
             <option value="no">No / non sembra</option>
@@ -95,6 +93,6 @@
     </section>
   </main>
 
-  <script src="app.js?v=12"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>

@@ -1,12 +1,5 @@
-const CACHE = "dentvision-v12-anticache";
-const FILES = [
-  "./",
-  "index.html?v=12",
-  "style.css?v=12",
-  "app.js?v=12",
-  "manifest.json?v=12",
-  "icon.svg"
-];
+const CACHE = "dentvision-v13-bolli-liberi";
+const FILES = ["./","index.html?v=13","style.css?v=13","app.js?v=13","manifest.json?v=13","icon.svg"];
 
 self.addEventListener("install", event => {
   self.skipWaiting();

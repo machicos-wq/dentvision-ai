@@ -1,8 +1,8 @@
-# DentVision AI PWA v1.2 anti-cache
+# DentVision AI PWA v1.3
 
-Versione corretta:
-- Archivio con ricerca
-- Modifica richiesta
-- Elimina richiesta
-- WhatsApp su ogni richiesta
-- Service worker aggiornato per evitare cache vecchia
+Novità:
+- Campo numero bolli libero
+- Nessun limite a 70+
+- Stima più realistica per danni grandi
+- Archivio con ricerca, modifica, elimina e WhatsApp
+- Anti-cache v13
