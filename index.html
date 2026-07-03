@@ -1,15 +1,37 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>DentVision AI v1.4</title><meta name="theme-color" content="#0f172a"><link rel="manifest" href="manifest.json?v=14"><link rel="stylesheet" href="style.css?v=14"></head>
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>DentVision AI v1.5</title><meta name="theme-color" content="#0f172a"><link rel="manifest" href="manifest.json?v=15"><link rel="stylesheet" href="style.css?v=15"></head>
 <body><main class="app">
-<section class="hero"><p class="badge">DentVision AI · PWA v1.4</p><h1>Stima danni grandine</h1><p>Listino professionale a fasce, prezzo modificabile e archivio richieste.</p></section>
+<section class="hero"><p class="badge">DentVision AI · PWA v1.5</p><h1>Stima danni grandine</h1><p>Listino professionale, prezzo modificabile e selezione pannelli su disegno auto.</p></section>
 <section class="card"><h2>Dati veicolo</h2><div class="grid"><label>Marca e modello<input id="carModel" placeholder="Es. Opel Insignia 2014"></label><label>Targa o riferimento<input id="plate" placeholder="Facoltativo"></label><label>Città<input id="city" placeholder="Es. Lissone"></label></div></section>
+
+<section class="card"><h2>Pannelli danneggiati</h2><p class="hint">Tocca i pannelli colpiti. Puoi selezionarne più di uno.</p>
+<div class="car-wrap">
+<svg class="car-svg" viewBox="0 0 720 420" role="img" aria-label="Schema auto">
+<rect class="panel" data-panel="Cofano" x="260" y="35" width="200" height="70" rx="22"/>
+<rect class="panel" data-panel="Parabrezza/Zona anteriore" x="280" y="112" width="160" height="48" rx="18"/>
+<rect class="panel" data-panel="Tetto" x="250" y="168" width="220" height="92" rx="28"/>
+<rect class="panel" data-panel="Lunotto/Zona posteriore" x="280" y="268" width="160" height="48" rx="18"/>
+<rect class="panel" data-panel="Baule" x="260" y="323" width="200" height="62" rx="22"/>
+<rect class="panel" data-panel="Fiancata sinistra" x="70" y="150" width="155" height="135" rx="28"/>
+<rect class="panel" data-panel="Fiancata destra" x="495" y="150" width="155" height="135" rx="28"/>
+<circle class="panel" data-panel="Parafango ant. sinistro" cx="110" cy="95" r="45"/>
+<circle class="panel" data-panel="Parafango ant. destro" cx="610" cy="95" r="45"/>
+<circle class="panel" data-panel="Parafango post. sinistro" cx="110" cy="335" r="45"/>
+<circle class="panel" data-panel="Parafango post. destro" cx="610" cy="335" r="45"/>
+<text class="car-label" x="360" y="78">COFANO</text><text class="car-label" x="360" y="225">TETTO</text><text class="car-label" x="360" y="360">BAULE</text>
+<text class="car-label" x="147" y="222">FIANCATA SX</text><text class="car-label" x="572" y="222">FIANCATA DX</text>
+</svg>
+<div id="selectedPanels" class="selected-list">Pannelli selezionati: nessuno</div>
+</div>
+</section>
+
 <section class="card"><h2>Danno</h2><div class="grid">
-<label>Zona colpita<select id="area"><option value="cofano">Cofano</option><option value="tetto">Tetto</option><option value="fiancata">Fiancata</option><option value="multipla">Più zone</option></select></label>
 <label>Numero bolli<input id="dents" type="number" min="1" step="1" placeholder="Es. 250"></label>
 <label>Grandezza media<select id="size"><option value="piccola">Piccola</option><option value="media">Media</option><option value="grande">Grande</option></select></label>
 <label>Vernice danneggiata?<select id="paint"><option value="no">No / non sembra</option><option value="si">Sì</option></select></label>
 </div><div class="price-box"><p class="hint">Listino base: 1-50 = 350€, 51-200 = 550€, 201-300 = 750€, 301-550 = 950€, oltre 550 = 1150€.</p></div></section>
+
 <section class="card"><h2>Foto</h2><p class="hint">Consiglio: luce radente, pannello intero e dettaglio ravvicinato.</p><input type="file" id="photos" accept="image/*" multiple><div id="preview" class="preview"></div></section>
 <section class="card"><h2>Cliente</h2><div class="grid"><label>Nome<input id="name" placeholder="Nome cliente"></label><label>Telefono<input id="phone" placeholder="+39..."></label></div><button id="estimateBtn">Genera stima</button><button id="cancelEditBtn" class="secondary hidden">Annulla modifica</button></section>
 <section id="result" class="result hidden"><h2>Risultato</h2><div class="price" id="price"></div><p id="diagnosis"></p><label>Prezzo finale modificabile<input id="finalPrice" type="number" min="0" step="10" placeholder="Prezzo finale"></label><div class="actions"><button id="saveLead">Salva richiesta</button><button id="copyText">Copia testo</button><a id="whatsapp" class="whatsapp" target="_blank">WhatsApp</a></div></section>
 <section class="card"><h2>Archivio richieste</h2><input id="searchLeads" placeholder="Cerca nome, telefono, targa, auto o città..."><div id="leads"></div></section>
-</main><script src="app.js?v=14"></script></body></html>
+</main><script src="app.js?v=15"></script></body></html>

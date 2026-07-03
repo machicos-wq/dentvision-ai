@@ -1,3 +1,3 @@
-# DentVision AI PWA v1.4
+# DentVision AI PWA v1.5
 
-Listino professionale a fasce, correttivi, prezzo finale modificabile, archivio completo.
+Novità: disegno auto con pannelli selezionabili, listino a fasce, prezzo modificabile, archivio completo.

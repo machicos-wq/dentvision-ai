@@ -1,4 +1,4 @@
-:root{--card:rgba(17,24,39,.92);--text:#e5e7eb;--muted:#a5b4c7;--accent:#38bdf8;--ok:#22c55e;--danger:#ef4444;--border:#273449}
+:root{--card:rgba(17,24,39,.92);--text:#e5e7eb;--muted:#a5b4c7;--accent:#38bdf8;--ok:#22c55e;--danger:#ef4444;--border:#273449;--selected:#22c55e}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#1d4ed8 0,#0f172a 40%);color:var(--text)}
 .app{max-width:980px;margin:0 auto;padding:20px}.hero,.card,.result{border:1px solid var(--border);border-radius:24px;background:var(--card);padding:22px;margin:16px 0;box-shadow:0 12px 34px rgba(0,0,0,.22)}
 .hero{background:linear-gradient(135deg,rgba(56,189,248,.22),rgba(17,24,39,.92))}.badge{color:var(--accent);font-weight:900;letter-spacing:.04em}
@@ -11,3 +11,10 @@ button,.whatsapp{border:0;border-radius:14px;padding:13px 17px;background:var(--
 .hidden{display:none}.price{color:var(--accent);font-size:40px;font-weight:1000}.price-box{margin-top:14px;padding:12px;border:1px solid var(--border);border-radius:14px;background:#07111f}
 .lead{padding:13px;border:1px solid var(--border);border-radius:14px;margin-top:10px;background:#07111f}.lead strong{font-size:18px}.small{font-size:13px;color:var(--muted)}
 .lead-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.lead-actions button,.lead-actions a{width:auto;padding:10px 12px;font-size:14px}#searchLeads{margin-bottom:12px}
+.car-wrap{background:#07111f;border:1px solid var(--border);border-radius:18px;padding:12px;margin-top:10px;overflow:hidden}
+.car-svg{width:100%;max-width:680px;display:block;margin:auto}
+.panel{fill:rgba(56,189,248,.16);stroke:#38bdf8;stroke-width:2;cursor:pointer;transition:.15s}
+.panel:hover{fill:rgba(56,189,248,.3)}
+.panel.selected{fill:rgba(34,197,94,.55);stroke:#22c55e;stroke-width:3}
+.car-label{font-size:14px;fill:#e5e7eb;font-weight:700;text-anchor:middle;pointer-events:none}
+.selected-list{margin-top:10px;color:var(--accent);font-weight:800}
