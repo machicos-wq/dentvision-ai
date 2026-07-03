@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DentVision AI</title>
+  <meta name="theme-color" content="#0f172a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <p class="badge">DentVision AI · PWA</p>
+      <h1>Stima danni grandine</h1>
+      <p>Carica foto, inserisci dati e genera una stima rapida con richiesta cliente salvabile.</p>
+    </section>
+
+    <section class="card">
+      <h2>Dati veicolo</h2>
+      <div class="grid">
+        <label>Marca e modello
+          <input id="carModel" placeholder="Es. Audi A3 2018">
+        </label>
+        <label>Targa o riferimento
+          <input id="plate" placeholder="Facoltativo">
+        </label>
+        <label>Città
+          <input id="city" placeholder="Es. Lissone">
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Danno</h2>
+      <div class="grid">
+        <label>Zona colpita
+          <select id="area">
+            <option value="cofano">Cofano</option>
+            <option value="tetto">Tetto</option>
+            <option value="fiancata">Fiancata</option>
+            <option value="multipla">Più zone</option>
+          </select>
+        </label>
+        <label>Numero bolli stimato
+          <select id="dents">
+            <option value="10">1 - 10</option>
+            <option value="30">11 - 30</option>
+            <option value="70">31 - 70</option>
+            <option value="120">70+</option>
+          </select>
+        </label>
+        <label>Grandezza media
+          <select id="size">
+            <option value="piccola">Piccola</option>
+            <option value="media">Media</option>
+            <option value="grande">Grande</option>
+          </select>
+        </label>
+        <label>Vernice danneggiata?
+          <select id="paint">
+            <option value="no">No / non sembra</option>
+            <option value="si">Sì</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Foto</h2>
+      <p class="hint">Consiglio: luce radente, pannello intero e dettaglio ravvicinato. Foto buie = preventivo cieco, capolavoro umano ricorrente.</p>
+      <input type="file" id="photos" accept="image/*" multiple>
+      <div id="preview" class="preview"></div>
+    </section>
+
+    <section class="card">
+      <h2>Cliente</h2>
+      <div class="grid">
+        <label>Nome
+          <input id="name" placeholder="Nome cliente">
+        </label>
+        <label>Telefono
+          <input id="phone" placeholder="+39...">
+        </label>
+      </div>
+      <button id="estimateBtn">Genera stima</button>
+    </section>
+
+    <section id="result" class="result hidden">
+      <h2>Risultato</h2>
+      <div class="price" id="price"></div>
+      <p id="diagnosis"></p>
+      <div class="actions">
+        <button id="saveLead">Salva richiesta</button>
+        <button id="copyText">Copia testo</button>
+        <a id="whatsapp" class="whatsapp" target="_blank">WhatsApp</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Archivio richieste</h2>
+      <div id="leads"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

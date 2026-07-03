@@ -1,0 +1,86 @@
+:root {
+  --bg: #0f172a;
+  --card: rgba(17, 24, 39, .92);
+  --text: #e5e7eb;
+  --muted: #a5b4c7;
+  --accent: #38bdf8;
+  --ok: #22c55e;
+  --border: #273449;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top, #1d4ed8 0, #0f172a 40%);
+  color: var(--text);
+}
+.app { max-width: 980px; margin: 0 auto; padding: 20px; }
+.hero, .card, .result {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--card);
+  padding: 22px;
+  margin: 16px 0;
+  box-shadow: 0 12px 34px rgba(0,0,0,.22);
+}
+.hero {
+  background: linear-gradient(135deg, rgba(56,189,248,.22), rgba(17,24,39,.92));
+}
+.badge {
+  color: var(--accent);
+  font-weight: 900;
+  letter-spacing: .04em;
+}
+h1 { font-size: clamp(36px, 8vw, 68px); margin: 8px 0; }
+h2 { margin-top: 0; }
+p, .hint { color: var(--muted); }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+label { display: grid; gap: 7px; color: var(--muted); }
+input, select {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: #07111f;
+  color: var(--text);
+  border-radius: 14px;
+  padding: 13px;
+  font-size: 16px;
+}
+button, .whatsapp {
+  border: 0;
+  border-radius: 14px;
+  padding: 13px 17px;
+  background: var(--accent);
+  color: #06121f;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.whatsapp { background: var(--ok); }
+.preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.preview img {
+  width: 100%;
+  height: 115px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+.hidden { display: none; }
+.price { color: var(--accent); font-size: 40px; font-weight: 1000; }
+.lead {
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-top: 10px;
+  background: #07111f;
+}
+.small { font-size: 13px; color: var(--muted); }
