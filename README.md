@@ -27,6 +27,7 @@ Il modello 3D è un file locale nel repository. Il componente che lo mostra vien
 
 ## Commit
 `DentVision AI v1.8.0 modello 3D reale`
+Retry pubblicazione modello 3D v1.8
 
 ## Crediti modello
 Metadata nel GLB: **Generic Sedan Car**, autore **assetfactory**, licenza **Sketchfab Standard**.
