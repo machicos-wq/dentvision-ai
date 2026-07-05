@@ -1,4 +1,4 @@
-// DentVision AI v1.7.4
+// DentVision AI v1.7.6
 // Auto 3D offline migliorata: più pannelli e forma più "automobile".
 
 (() => {
@@ -10,7 +10,7 @@
   const ctx = canvas.getContext("2d");
   let width = 1, height = 1, dpr = 1;
 
-  let yaw = -0.70;
+  let yaw = 2.44;
   let pitch = -0.26;
   let zoom = 1.03;
   let drag = null;
@@ -20,62 +20,75 @@
   let latestEstimate = null;
   let editIndex = null;
   let previewUrls = [];
+  // Le foto vengono gestite in un array separato: così galleria e fotocamera
+  // possono aggiungere immagini alla stessa pratica senza dipendere dal FileList del browser.
+  let selectedPhotoFiles = [];
 
-  // Geometria più rifinita.
-  // Vettori: x = sx/dx, y = basso/alto, z = anteriore/posteriore.
+  // Geometria "berlina" più slanciata.
+  // x = sinistra/destra, y = altezza, z = anteriore/posteriore.
   const panelDefs = [
-    { name: "Cofano", color: "#2f7dd8", verts: [[-0.88,1.20,-2.06],[0.88,1.20,-2.06],[0.76,1.36,-0.94],[-0.76,1.36,-0.94]] },
-    { name: "Tetto", color: "#3a8bf0", verts: [[-0.70,1.82,-0.58],[0.70,1.82,-0.58],[0.64,1.80,0.82],[-0.64,1.80,0.82]] },
-    { name: "Baule", color: "#2f7dd8", verts: [[-0.76,1.32,0.94],[0.76,1.32,0.94],[0.90,1.14,2.00],[-0.90,1.14,2.00]] },
-    { name: "Fiancata sinistra", color: "#245ea7", verts: [[-1.08,0.68,-1.48],[-1.08,1.24,-1.44],[-1.08,1.28,1.42],[-1.08,0.70,1.42]] },
-    { name: "Fiancata destra", color: "#245ea7", verts: [[1.08,0.68,-1.48],[1.08,1.24,-1.44],[1.08,1.28,1.42],[1.08,0.70,1.42]] },
-    { name: "Parafango anteriore sinistro", color: "#2a70c3", verts: [[-1.10,0.74,-2.04],[-1.10,1.18,-2.00],[-1.10,1.26,-1.48],[-1.10,0.72,-1.48]] },
-    { name: "Parafango anteriore destro", color: "#2a70c3", verts: [[1.10,0.74,-2.04],[1.10,1.18,-2.00],[1.10,1.26,-1.48],[1.10,0.72,-1.48]] },
-    { name: "Parafango posteriore sinistro", color: "#2a70c3", verts: [[-1.10,0.72,1.48],[-1.10,1.26,1.48],[-1.10,1.18,2.00],[-1.10,0.74,2.04]] },
-    { name: "Parafango posteriore destro", color: "#2a70c3", verts: [[1.10,0.72,1.48],[1.10,1.26,1.48],[1.10,1.18,2.00],[1.10,0.74,2.04]] }
+    { name: "Cofano", color: "#2a85e8", verts: [[-0.94,1.17,-2.26],[0.94,1.17,-2.26],[0.80,1.39,-0.88],[-0.80,1.39,-0.88]] },
+    { name: "Tetto", color: "#3f96f6", verts: [[-0.73,1.94,-0.58],[0.73,1.94,-0.58],[0.66,1.91,0.88],[-0.66,1.91,0.88]] },
+    { name: "Baule", color: "#2a85e8", verts: [[-0.79,1.36,0.98],[0.79,1.36,0.98],[0.94,1.16,2.22],[-0.94,1.16,2.22]] },
+    { name: "Fiancata sinistra", color: "#205fae", verts: [[-1.13,0.68,-1.53],[-1.13,1.28,-1.43],[-1.13,1.31,1.48],[-1.13,0.69,1.48]] },
+    { name: "Fiancata destra", color: "#205fae", verts: [[1.13,0.68,-1.53],[1.13,1.28,-1.43],[1.13,1.31,1.48],[1.13,0.69,1.48]] },
+    { name: "Parafango anteriore sinistro", color: "#2672c9", verts: [[-1.15,0.72,-2.18],[-1.15,1.18,-2.13],[-1.15,1.28,-1.48],[-1.15,0.70,-1.48]] },
+    { name: "Parafango anteriore destro", color: "#2672c9", verts: [[1.15,0.72,-2.18],[1.15,1.18,-2.13],[1.15,1.28,-1.48],[1.15,0.70,-1.48]] },
+    { name: "Parafango posteriore sinistro", color: "#2672c9", verts: [[-1.15,0.70,1.48],[-1.15,1.28,1.48],[-1.15,1.18,2.13],[-1.15,0.72,2.18]] },
+    { name: "Parafango posteriore destro", color: "#2672c9", verts: [[1.15,0.70,1.48],[1.15,1.28,1.48],[1.15,1.18,2.13],[1.15,0.72,2.18]] }
   ];
 
   const bodyFaces = [
-    // Pianale / struttura
-    { color:"#17355f", verts:[[-1.05,.54,-1.98],[1.05,.54,-1.98],[1.05,.54,1.98],[-1.05,.54,1.98]] },
-    // Frontale
-    { color:"#2c6aba", verts:[[-0.92,.64,-2.16],[0.92,.64,-2.16],[0.88,1.10,-2.08],[-0.88,1.10,-2.08]] },
-    { color:"#1a487f", verts:[[-0.84,.76,-2.18],[0.84,.76,-2.18],[0.82,.92,-2.15],[-0.82,.92,-2.15]], alpha:.95 },
-    // Paraurti anteriore
-    { color:"#1f4e8c", verts:[[-0.94,.56,-2.24],[0.94,.56,-2.24],[0.94,.72,-2.18],[-0.94,.72,-2.18]] },
-    // Retro
-    { color:"#2c6aba", verts:[[-0.92,.64,2.16],[0.92,.64,2.16],[0.88,1.08,2.08],[-0.88,1.08,2.08]] },
-    { color:"#1f4e8c", verts:[[-0.96,.56,2.24],[0.96,.56,2.24],[0.94,.72,2.18],[-0.94,.72,2.18]] },
-    // Finestrini e montanti
-    { color:"#0e2239", verts:[[-0.88,1.24,-1.12],[0.88,1.24,-1.12],[0.74,1.74,-0.04],[-0.74,1.74,-0.04]] },
-    { color:"#70c7ec", alpha:.38, verts:[[-0.78,1.28,-1.00],[0.78,1.28,-1.00],[0.66,1.68,-0.10],[-0.66,1.68,-0.10]] },
-    { color:"#70c7ec", alpha:.38, verts:[[-0.62,1.72,0.00],[0.62,1.72,0.00],[0.58,1.70,0.76],[-0.58,1.70,0.76]] },
-    { color:"#0e2239", verts:[[-0.74,1.26,0.92],[0.74,1.26,0.92],[0.62,1.66,0.80],[-0.62,1.66,0.80]] },
-    // Sezioni superiori porte
-    { color:"#274f86", verts:[[-1.06,1.10,-1.24],[-1.06,1.24,-1.18],[-1.06,1.28,1.10],[-1.06,1.08,1.16]] },
-    { color:"#274f86", verts:[[1.06,1.10,-1.24],[1.06,1.24,-1.18],[1.06,1.28,1.10],[1.06,1.08,1.16]] },
-    // Fascia laterale bassa
-    { color:"#214c83", verts:[[-1.06,0.62,-1.44],[-1.06,0.84,-1.44],[-1.06,0.86,1.40],[-1.06,0.64,1.40]] },
-    { color:"#214c83", verts:[[1.06,0.62,-1.44],[1.06,0.84,-1.44],[1.06,0.86,1.40],[1.06,0.64,1.40]] },
+    // Scocca inferiore e paraurti
+    { color:"#132f58", verts:[[-1.10,.52,-2.12],[1.10,.52,-2.12],[1.10,.52,2.12],[-1.10,.52,2.12]] },
+    { color:"#174f91", verts:[[-1.04,.58,-2.30],[1.04,.58,-2.30],[.96,1.12,-2.20],[-.96,1.12,-2.20]] },
+    { color:"#143e73", verts:[[-1.08,.50,-2.34],[1.08,.50,-2.34],[1.05,.71,-2.27],[-1.05,.71,-2.27]] },
+    { color:"#174f91", verts:[[-1.04,.58,2.30],[1.04,.58,2.30],[.96,1.10,2.20],[-.96,1.10,2.20]] },
+    { color:"#143e73", verts:[[-1.08,.50,2.34],[1.08,.50,2.34],[1.05,.71,2.27],[-1.05,.71,2.27]] },
+
+    // Fianchi sotto i pannelli
+    { color:"#174f91", verts:[[-1.11,.57,-1.60],[-1.11,.87,-1.56],[-1.11,.88,1.52],[-1.11,.58,1.52]] },
+    { color:"#174f91", verts:[[1.11,.57,-1.60],[1.11,.87,-1.56],[1.11,.88,1.52],[1.11,.58,1.52]] },
+
+    // Cabina rastremata, parabrezza e lunotto
+    { color:"#0b1e36", verts:[[-.82,1.30,-1.16],[.82,1.30,-1.16],[.74,1.86,-.10],[-.74,1.86,-.10]] },
+    { color:"#79d0fa", alpha:.44, verts:[[-.74,1.37,-1.06],[.74,1.37,-1.06],[.65,1.78,-.15],[-.65,1.78,-.15]] },
+    { color:"#0b1e36", verts:[[-.75,1.85,-.05],[.75,1.85,-.05],[.68,1.82,.93],[-.68,1.82,.93]] },
+    { color:"#79d0fa", alpha:.40, verts:[[-.64,1.76,.03],[.64,1.76,.03],[.57,1.70,.81],[-.57,1.70,.81]] },
+    { color:"#0b1e36", verts:[[-.75,1.28,.99],[.75,1.28,.99],[.64,1.68,.86],[-.64,1.68,.86]] },
+
+    // Porte, montanti e linee laterali
+    { color:"#1a4f91", verts:[[-1.11,.89,-1.39],[-1.11,1.25,-1.35],[-1.11,1.30,1.35],[-1.11,.90,1.39]] },
+    { color:"#1a4f91", verts:[[1.11,.89,-1.39],[1.11,1.25,-1.35],[1.11,1.30,1.35],[1.11,.90,1.39]] },
+    { color:"#254f86", verts:[[-1.125,.94,-.20],[-1.125,1.24,-.17],[-1.125,1.26,-.08],[-1.125,.95,-.10]] },
+    { color:"#254f86", verts:[[1.125,.94,-.20],[1.125,1.24,-.17],[1.125,1.26,-.08],[1.125,.95,-.10]] },
+
     // Specchietti
-    { color:"#1e293b", verts:[[-1.16,1.22,-0.90],[-1.02,1.22,-0.90],[-1.02,1.28,-0.78],[-1.16,1.28,-0.78]] },
-    { color:"#1e293b", verts:[[1.16,1.22,-0.90],[1.02,1.22,-0.90],[1.02,1.28,-0.78],[1.16,1.28,-0.78]] }
+    { color:"#0f243e", verts:[[-1.24,1.27,-.92],[-1.08,1.27,-.92],[-1.08,1.35,-.78],[-1.24,1.35,-.78]] },
+    { color:"#0f243e", verts:[[1.24,1.27,-.92],[1.08,1.27,-.92],[1.08,1.35,-.78],[1.24,1.35,-.78]] }
   ];
 
   const accentFaces = [
-    // fari ant
-    { color:"#bcdcff", verts:[[-0.78,.88,-2.19],[-0.54,.88,-2.18],[-0.54,.98,-2.15],[-0.78,.98,-2.16]], alpha:.95 },
-    { color:"#bcdcff", verts:[[0.54,.88,-2.18],[0.78,.88,-2.19],[0.78,.98,-2.16],[0.54,.98,-2.15]], alpha:.95 },
-    // fari post
-    { color:"#ef4444", verts:[[-0.74,.84,2.17],[-0.50,.84,2.16],[-0.50,.95,2.13],[-0.74,.95,2.14]], alpha:.9 },
-    { color:"#ef4444", verts:[[0.50,.84,2.16],[0.74,.84,2.17],[0.74,.95,2.14],[0.50,.95,2.13]], alpha:.9 },
-    // targa ant/post
-    { color:"#e2e8f0", verts:[[-0.32,.70,-2.23],[0.32,.70,-2.23],[0.32,.82,-2.18],[-0.32,.82,-2.18]], alpha:.85 },
-    { color:"#e2e8f0", verts:[[-0.32,.70,2.23],[0.32,.70,2.23],[0.32,.82,2.18],[-0.32,.82,2.18]], alpha:.85 }
+    // fari, calandra e targa
+    { color:"#d9f4ff", verts:[[-.84,.86,-2.29],[-.54,.86,-2.28],[-.54,1.01,-2.22],[-.84,1.01,-2.23]], alpha:.94 },
+    { color:"#d9f4ff", verts:[[.54,.86,-2.28],[.84,.86,-2.29],[.84,1.01,-2.23],[.54,1.01,-2.22]], alpha:.94 },
+    { color:"#061526", verts:[[-.42,.72,-2.34],[.42,.72,-2.34],[.42,.91,-2.25],[-.42,.91,-2.25]], alpha:.98 },
+    { color:"#e2e8f0", verts:[[-.28,.65,-2.35],[.28,.65,-2.35],[.28,.76,-2.30],[-.28,.76,-2.30]], alpha:.94 },
+
+    // luci posteriori e targa
+    { color:"#f04456", verts:[[-.82,.84,2.29],[-.52,.84,2.28],[-.52,.98,2.22],[-.82,.98,2.23]], alpha:.96 },
+    { color:"#f04456", verts:[[.52,.84,2.28],[.82,.84,2.29],[.82,.98,2.23],[.52,.98,2.22]], alpha:.96 },
+    { color:"#e2e8f0", verts:[[-.28,.65,2.35],[.28,.65,2.35],[.28,.76,2.30],[-.28,.76,2.30]], alpha:.94 },
+
+    // maniglie
+    { color:"#a7dffa", verts:[[-1.14,1.02,-.64],[-1.14,1.08,-.64],[-1.14,1.08,-.42],[-1.14,1.02,-.42]], alpha:.75 },
+    { color:"#a7dffa", verts:[[1.14,1.02,-.64],[1.14,1.08,-.64],[1.14,1.08,-.42],[1.14,1.02,-.42]], alpha:.75 },
+    { color:"#a7dffa", verts:[[-1.14,1.02,.58],[-1.14,1.08,.58],[-1.14,1.08,.80],[-1.14,1.02,.80]], alpha:.75 },
+    { color:"#a7dffa", verts:[[1.14,1.02,.58],[1.14,1.08,.58],[1.14,1.08,.80],[1.14,1.02,.80]], alpha:.75 }
   ];
 
   const wheels = [
-    [-1.10,.50,-1.46], [1.10,.50,-1.46], [-1.10,.50,1.46], [1.10,.50,1.46]
+    [-1.16,.50,-1.48], [1.16,.50,-1.48], [-1.16,.50,1.48], [1.16,.50,1.48]
   ];
 
   function rotate3D(v) {
@@ -308,12 +321,12 @@
 
   function setView(view) {
     const states = {
-      front: [0, -0.18, 1.18],
-      rear: [Math.PI, -0.18, 1.18],
+      front: [Math.PI, -0.18, 1.18],
+      rear: [0, -0.18, 1.18],
       left: [-Math.PI / 2, -0.16, 1.14],
       right: [Math.PI / 2, -0.16, 1.14],
       top: [-0.03, -1.02, 1.00],
-      reset: [-0.70, -0.26, 1.03]
+      reset: [2.44, -0.26, 1.03]
     };
     const next = states[view] || states.reset;
     const from = { yaw, pitch, zoom }, start = performance.now(), duration = 320;
@@ -473,10 +486,9 @@ Note: ${d.notes}`;
     ["carModel", "plate", "city", "dents", "name", "phone", "finalPrice"].forEach(id => $(id).value = "");
     $("size").value = "piccola";
     $("paint").value = "no";
-    $("photos").value = "";
-    previewUrls.forEach(URL.revokeObjectURL);
-    previewUrls = [];
-    $("preview").innerHTML = "";
+    $("galleryPhotos").value = "";
+    $("cameraPhotos").value = "";
+    clearSelectedPhotos();
     $("photoCheck").className = "photo-check hidden";
     $("result").classList.add("hidden");
     $("cancelEdit").classList.add("hidden");
@@ -509,6 +521,62 @@ Note: ${d.notes}`;
     $("estimateBtn").scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  function clearSelectedPhotos() {
+    previewUrls.forEach(URL.revokeObjectURL);
+    previewUrls = [];
+    selectedPhotoFiles = [];
+    $("preview").innerHTML = "";
+    $("photoHint").textContent = "Nessuna foto selezionata.";
+  }
+
+  function renderSelectedPhotos() {
+    previewUrls.forEach(URL.revokeObjectURL);
+    previewUrls = [];
+    $("preview").innerHTML = "";
+
+    selectedPhotoFiles.forEach((file, index) => {
+      const tile = document.createElement("div");
+      tile.className = "photo-tile";
+
+      const url = URL.createObjectURL(file);
+      previewUrls.push(url);
+
+      const image = document.createElement("img");
+      image.src = url;
+      image.alt = `Foto danno ${index + 1}`;
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "remove-photo";
+      remove.dataset.removePhoto = String(index);
+      remove.setAttribute("aria-label", `Rimuovi foto ${index + 1}`);
+      remove.textContent = "×";
+
+      tile.append(image, remove);
+      $("preview").appendChild(tile);
+    });
+
+    $("photoHint").textContent = selectedPhotoFiles.length
+      ? `${selectedPhotoFiles.length} foto selezionata${selectedPhotoFiles.length === 1 ? "" : "e"}.`
+      : "Nessuna foto selezionata.";
+  }
+
+  function addSelectedPhotos(fileList) {
+    const incoming = [...(fileList || [])].filter((file) => file && file.type.startsWith("image/"));
+    if (!incoming.length) return;
+
+    // Evita duplicati evidenti e limita a 8 foto per pratica.
+    incoming.forEach((file) => {
+      const duplicate = selectedPhotoFiles.some(
+        (existing) => existing.name === file.name && existing.size === file.size && existing.lastModified === file.lastModified
+      );
+      if (!duplicate && selectedPhotoFiles.length < 8) selectedPhotoFiles.push(file);
+    });
+
+    renderSelectedPhotos();
+    $("photoCheck").className = "photo-check hidden";
+  }
+
   function photoImage(file) {
     return new Promise((ok, no) => {
       const u = URL.createObjectURL(file), im = new Image();
@@ -519,7 +587,7 @@ Note: ${d.notes}`;
   }
 
   async function checkPhotos() {
-    const files = [...$("photos").files].slice(0, 6);
+    const files = selectedPhotoFiles.slice(0, 6);
     if (!files.length) { alert("Prima carica almeno una foto."); return; }
     let bad = 0, low = 0;
     for (const f of files) {
@@ -552,10 +620,6 @@ Note: ${d.notes}`;
   }
 
   function bindApp() {
-    // Il pulsante apre il selettore immagini senza "capture":
-    // su Android permette di cercare nella galleria / Foto invece di forzare la fotocamera.
-    $("pickPhotos").addEventListener("click", () => $("photos").click());
-
     $("undoPoint").addEventListener("click", () => {
       if (points3d.length) {
         points3d.pop();
@@ -580,14 +644,26 @@ Note: ${d.notes}`;
       drawCar();
       renderDamageInfo();
     });
-    $("photos").addEventListener("change", () => {
-      previewUrls.forEach(URL.revokeObjectURL);
-      previewUrls = [];
-      $("preview").innerHTML = "";
-      [...$("photos").files].slice(0, 8).forEach(f => {
-        const u = URL.createObjectURL(f), im = document.createElement("img");
-        previewUrls.push(u); im.src = u; im.alt = "Foto veicolo"; $("preview").appendChild(im);
-      });
+    $("galleryPhotos").addEventListener("change", (event) => {
+      addSelectedPhotos(event.target.files);
+      event.target.value = "";
+    });
+
+    $("cameraPhotos").addEventListener("change", (event) => {
+      addSelectedPhotos(event.target.files);
+      event.target.value = "";
+    });
+
+    $("clearPhotos").addEventListener("click", () => {
+      clearSelectedPhotos();
+      $("photoCheck").className = "photo-check hidden";
+    });
+
+    $("preview").addEventListener("click", (event) => {
+      const remove = event.target.closest("[data-remove-photo]");
+      if (!remove) return;
+      selectedPhotoFiles.splice(Number(remove.dataset.removePhoto), 1);
+      renderSelectedPhotos();
       $("photoCheck").className = "photo-check hidden";
     });
     $("checkPhotos").addEventListener("click", checkPhotos);

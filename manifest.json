@@ -1,8 +1,8 @@
 {
   "name": "DentVision AI",
   "short_name": "DentVision",
-  "description": "Preventivi PDR con mappa danni 3D offline migliorata",
-  "start_url": "./?v=174",
+  "description": "Preventivi PDR con berlina 3D, galleria e fotocamera separate",
+  "start_url": "./?v=176",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",

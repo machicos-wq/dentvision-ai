@@ -63,3 +63,82 @@ button,.whatsapp{min-height:46px;border:0;border-radius:14px;padding:13px 17px;b
   .view-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
   .actions>*{flex:1 1 100%}
 }
+
+
+/* v1.7.6: pulsante nativo di galleria. Il label apre il selettore Android senza forzare la fotocamera. */
+.visually-hidden-file {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+.file-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  border: 0;
+  border-radius: 14px;
+  padding: 13px 17px;
+  background: var(--accent);
+  color: #06121f;
+  font-size: 15px;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+
+/* v1.7.6 – galleria e fotocamera separate */
+.photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.file-button.gallery-button {
+  background: #38bdf8;
+  color: #06121f;
+}
+.file-button.camera-button {
+  background: #22c55e;
+  color: #052e16;
+}
+.photo-tile {
+  position: relative;
+  min-width: 0;
+}
+.photo-tile img {
+  width: 100%;
+  height: 115px;
+  display: block;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+.remove-photo {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-height: 30px;
+  min-width: 30px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, .96);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+}
+@media (max-width: 390px) {
+  .photo-actions > * {
+    flex: 1 1 100%;
+  }
+}
