@@ -1,8 +1,8 @@
 {
   "name": "DentVision AI",
   "short_name": "DentVision",
-  "description": "Stima preliminare danni grandine PDR",
-  "start_url": "./",
+  "description": "Preventivi PDR con mappa danni 3D",
+  "start_url": "./?v=170",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",

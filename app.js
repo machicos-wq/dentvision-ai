@@ -1,27 +1,189 @@
-const KEY = 'dentvision_leads';
-const $ = id => document.getElementById(id);
-let panels = [], last = null, edit = null, text = '', lastAi = null;
-const AI_ENDPOINT = (window.DENTVISION_AI_ENDPOINT || '').trim();
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
-function leads(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
-function save(a){localStorage.setItem(KEY,JSON.stringify(a))}
-function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
-function panelText(){return panels.length?panels.join(', '):'nessuno'}
-function drawPanels(){document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('selected-panel',panels.includes(p.dataset.panel)));$('selectedPanels').textContent='Pannelli selezionati: '+panelText()}
-function priceBase(n){if(n<=50)return 350;if(n<=200)return 550;if(n<=300)return 750;if(n<=550)return 950;return 1150}
-function calc(){const n=Math.max(1,Math.round(Number($('dents').value)||1));let p=priceBase(n),note=[];if(panels.length===2){p*=1.15;note.push('2 pannelli: +15%')}else if(panels.length===3){p*=1.25;note.push('3 pannelli: +25%')}else if(panels.length>=4){p*=1.4;note.push('4+ pannelli: +40%')}if(panels.includes('Tetto')){p*=1.15;note.push('Tetto: +15%')}if(panels.includes('Fiancata sinistra')||panels.includes('Fiancata destra')){p*=1.1;note.push('Fiancata: +10%')}if($('size').value==='media'){p*=1.1;note.push('Bolli medi: +10%')}if($('size').value==='grande'){p*=1.25;note.push('Bolli grandi: +25%')}if($('paint').value==='si')note.push('Vernice danneggiata: valutare carrozzeria');let s='lieve';if(n>50)s='medio';if(n>200)s='importante';if(n>550)s='molto importante';return{n,p:Math.round(p/10)*10,s,note}}
-function norm(x){return{date:x.date||'',carModel:x.carModel||'Auto non specificata',plate:x.plate||'N/D',city:x.city||'Città non specificata',panels:x.panels||x.area||'Non indicati',panelsArray:Array.isArray(x.panelsArray)?x.panelsArray:[],dents:String(x.dents||x.dentsValue||'N/D'),dentsValue:String(x.dentsValue||x.dents||''),size:x.size||'piccola',paint:x.paint||'no',name:x.name||'Cliente',phone:x.phone||'N/D',suggestedPrice:Number(x.suggestedPrice||x.finalPrice||0),finalPrice:Number(x.finalPrice||x.suggestedPrice||0),estimate:x.estimate||`${x.finalPrice||x.suggestedPrice||'N/D'}€`,severity:x.severity||'N/D',notes:x.notes||'Nessuna',ai:x.ai||null}}
-function msg(d){return`DentVision AI - Nuova richiesta\nCliente: ${d.name}\nTelefono: ${d.phone}\nAuto: ${d.carModel}\nTarga/Rif.: ${d.plate}\nCittà: ${d.city}\nPannelli: ${d.panels}\nNumero bolli: ${d.dents}\nGrandezza: ${d.size}\nVernice danneggiata: ${d.paint}\nPrezzo suggerito: ${d.suggestedPrice}€\nPrezzo finale: ${d.finalPrice}€\nGravità: ${d.severity}\nNote: ${d.notes||'Nessuna'}${d.ai?`\nIA: confidenza ${d.ai.confidence||'N/D'}%` : ''}`}
-function render(){const q=$('search').value.trim().toLowerCase();const found=leads().map((v,i)=>({v:norm(v),i})).filter(({v})=>[v.name,v.phone,v.plate,v.carModel,v.city,v.panels].join(' ').toLowerCase().includes(q));$('leads').innerHTML=found.length?'':"<p class='hint'>Nessuna richiesta trovata.</p>";found.forEach(({v,i})=>{const e=document.createElement('div');e.className='lead';e.innerHTML=`<strong>${esc(v.name)}</strong> · ${esc(v.carModel)}<br>${esc(v.city)} · ${esc(v.estimate)} · ${esc(v.date)}<br><span class="small">Tel: ${esc(v.phone)} · Targa/Rif.: ${esc(v.plate)} · Bolli: ${esc(v.dents)} · Pannelli: ${esc(v.panels)} · Danno: ${esc(v.severity)}${v.ai?` · IA ${esc(v.ai.confidence)}%`:''}</span><div class="lead-actions"><button data-act="edit" data-i="${i}">Modifica</button><button class="danger" data-act="del" data-i="${i}">Elimina</button><a class="whatsapp" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg(v))}">WhatsApp</a></div>`;$('leads').appendChild(e)})}
-function reset(){['carModel','plate','city','dents','name','phone','finalPrice'].forEach(x=>$(x).value='');$('size').value='piccola';$('paint').value='no';$('photos').value='';$('preview').innerHTML='';$('photoCheck').className='photo-check hidden';$('aiResult').className='ai-result hidden';$('applyAi').classList.add('hidden');panels=[];drawPanels();$('result').classList.add('hidden');$('cancelEdit').classList.add('hidden');$('saveLead').textContent='Salva richiesta';last=null;edit=null;text='';lastAi=null}
-function fileToDataUrl(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)})}
-function loadImage(file){return new Promise((resolve,reject)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);resolve(im)};im.onerror=reject;im.src=u})}
-async function photoStats(file){const im=await loadImage(file),w=Math.min(180,im.naturalWidth),h=Math.max(1,Math.round(im.naturalHeight*w/im.naturalWidth)),c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0,w,h);const d=x.getImageData(0,0,w,h).data;let sum=0,sum2=0;for(let i=0;i<d.length;i+=4){const y=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];sum+=y;sum2+=y*y}const n=d.length/4,avg=sum/n,sd=Math.sqrt(Math.max(0,sum2/n-avg*avg));return{width:im.naturalWidth,height:im.naturalHeight,brightness:Math.round(avg),contrast:Math.round(sd)}}
-async function localPhotoCheck(files){let total=0,weak=0,lowRes=0;for(const f of files){const s=await photoStats(f);total++;if(s.brightness<55||s.brightness>205||s.contrast<20)weak++;if(s.width<900||s.height<600)lowRes++}const good=Math.max(0,100-(files.length<3?30:0)-weak*18-lowRes*10);return{score:good,weak,lowRes,count:total}}
-function showLocalCheck(c){const box=$('photoCheck');box.className='photo-check '+(c.score>=70?'good':'warning');const issues=[];if(c.count<3)issues.push('servono almeno 3 foto');if(c.weak)issues.push(`${c.weak} foto con luce o contrasto debole`);if(c.lowRes)issues.push(`${c.lowRes} foto poco definite`);box.innerHTML=`<strong>Controllo foto: ${c.score}/100</strong><br><span class="small">${issues.length?issues.join(' · '):'Qualità tecnica buona per inviare l’analisi.'}</span>`}
-function formatAiResult(a, source){const q=a.photo_quality||'non dichiarata';const panelList=(a.likely_panels||[]).join(', ')||'nessuno riconosciuto';$('aiResult').className='ai-result';$('aiResult').innerHTML=`<h3>${source==='cloud'?'Analisi IA preliminare':'Controllo locale completato'}</h3><div class="ai-grid"><div class="ai-cell">Danno visibile<b>${esc(a.damage_present||'da verificare')}</b></div><div class="ai-cell">Bolli stimati<b>${esc(a.estimated_dents_min??'—')} - ${esc(a.estimated_dents_max??'—')}</b></div><div class="ai-cell">Grandezza<b>${esc(a.dent_size||'—')}</b></div><div class="ai-cell">Confidenza<b>${esc(a.confidence??'—')}%</b></div><div class="ai-cell">Qualità foto<b>${esc(q)}</b></div><div class="ai-cell">Vernice<b>${esc(a.paint_damage_suspected||'da verificare')}</b></div></div><p><strong>Pannelli:</strong> ${esc(panelList)}</p><p><strong>Sintesi:</strong> ${esc(a.summary||'Nessuna sintesi disponibile.')}</p><p class="small"><strong>Da fare:</strong> ${esc((a.recommendations||[]).join(' · ')||'Conferma sempre a vista prima del preventivo finale.')}</p>`}
-function localOnlyResult(check){return{damage_present:'non analizzato senza IA online',estimated_dents_min:'—',estimated_dents_max:'—',dent_size:'—',confidence:0,photo_quality:check.score>=70?'buona':'da migliorare',paint_damage_suspected:'da verificare',likely_panels:panels,summary:'Le foto hanno superato il controllo tecnico locale. Per riconoscere e stimare i bolli serve collegare il worker IA sicuro.',recommendations:check.score>=70?['Scatta una foto con luce radente su ogni pannello','Collega il worker IA per la stima visiva']:['Aggiungi foto ravvicinate con luce laterale','Evita riflessi del sole diretto e mosso']}}
-function applyAi(){if(!lastAi)return;const min=Number(lastAi.estimated_dents_min),max=Number(lastAi.estimated_dents_max);if(Number.isFinite(min)&&Number.isFinite(max)&&max>0){$('dents').value=Math.round((min+max)/2)}if(['piccola','media','grande'].includes(lastAi.dent_size))$('size').value=lastAi.dent_size;if(lastAi.paint_damage_suspected==='si')$('paint').value='si';if(Array.isArray(lastAi.likely_panels)&&lastAi.likely_panels.length){panels=[...new Set(lastAi.likely_panels)];drawPanels()}$('estimateBtn').scrollIntoView({behavior:'smooth',block:'center'});alert('Stima IA applicata. Controllala e poi genera il preventivo.')}
-async function runAi(){const files=[...$('photos').files].slice(0,6);if(!files.length){alert('Prima carica almeno una foto.');return}const btn=$('analyzeAi');btn.disabled=true;btn.textContent='Analisi in corso...';try{const check=await localPhotoCheck(files);showLocalCheck(check);if(!AI_ENDPOINT){lastAi=localOnlyResult(check);formatAiResult(lastAi,'local');$('applyAi').classList.add('hidden');return}const images=await Promise.all(files.map(fileToDataUrl));const context={carModel:$('carModel').value.trim(),plate:$('plate').value.trim(),selectedPanels:panels,photoTechnicalScore:check.score};const res=await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({images,context})});const body=await res.json();if(!res.ok)throw new Error(body.error||'Errore del server IA');lastAi=body;formatAiResult(lastAi,'cloud');$('applyAi').classList.remove('hidden')}catch(err){$('aiResult').className='ai-result';$('aiResult').innerHTML=`<strong>Analisi non riuscita.</strong><p class="small">${esc(err.message||String(err))}</p>`}finally{btn.disabled=false;btn.textContent='Analizza foto'}}
-function bind(){if(AI_ENDPOINT){$('aiMode').textContent='IA collegata';$('aiMode').classList.add('online')}document.querySelectorAll('.panel').forEach(p=>p.addEventListener('click',()=>{const n=p.dataset.panel;panels=panels.includes(n)?panels.filter(x=>x!==n):[...panels,n];drawPanels()}));$('clearPanels').addEventListener('click',()=>{panels=[];drawPanels()});$('photos').addEventListener('change',()=>{$('preview').innerHTML='';[...$('photos').files].slice(0,8).forEach(f=>{const im=document.createElement('img');im.src=URL.createObjectURL(f);im.alt='Foto veicolo';$('preview').appendChild(im)});$('photoCheck').className='photo-check hidden';$('aiResult').className='ai-result hidden';$('applyAi').classList.add('hidden');lastAi=null});$('analyzeAi').addEventListener('click',runAi);$('applyAi').addEventListener('click',applyAi);$('estimateBtn').addEventListener('click',()=>{const c=calc();last={date:new Date().toLocaleString('it-IT'),carModel:$('carModel').value.trim()||'Auto non specificata',plate:$('plate').value.trim()||'N/D',city:$('city').value.trim()||'Città non specificata',panels:panels.length?panels.join(', '):'Non indicati',panelsArray:[...panels],dents:String(c.n),dentsValue:String(c.n),size:$('size').value,paint:$('paint').value,name:$('name').value.trim()||'Cliente',phone:$('phone').value.trim()||'N/D',suggestedPrice:c.p,finalPrice:c.p,estimate:`${c.p}€`,severity:c.s,notes:c.note.join(', ')||'Nessuna',ai:lastAi};$('price').textContent=`${c.p}€`;$('finalPrice').value=c.p;$('diagnosis').textContent=`Danno ${c.s}. Bolli: ${c.n}. Pannelli: ${last.panels}. ${last.notes!=='Nessuna'?'Note: '+last.notes:''}`;$('result').classList.remove('hidden');$('saveLead').textContent=edit===null?'Salva richiesta':'Aggiorna richiesta';text=msg(last);$('whatsapp').href='https://wa.me/?text='+encodeURIComponent(text)});$('finalPrice').addEventListener('input',()=>{if(!last)return;const n=Number($('finalPrice').value);if(!Number.isFinite(n)||n<0)return;last.finalPrice=n;last.estimate=`${n}€`;$('price').textContent=`${n}€`;text=msg(last);$('whatsapp').href='https://wa.me/?text='+encodeURIComponent(text)});$('saveLead').addEventListener('click',()=>{if(!last){alert('Prima genera una stima.');return}let a=leads();if(edit===null)a.unshift(last);else a[edit]=last;save(a);alert(edit===null?'Richiesta salvata.':'Richiesta aggiornata.');render();reset()});$('copyText').addEventListener('click',async()=>{if(text){await navigator.clipboard.writeText(text);alert('Testo copiato.')}});$('cancelEdit').addEventListener('click',reset);$('search').addEventListener('input',render);$('leads').addEventListener('click',e=>{const b=e.target.closest('button[data-act]');if(!b)return;let i=Number(b.dataset.i);if(b.dataset.act==='del'){if(confirm('Vuoi davvero eliminare questa richiesta?')){let a=leads();a.splice(i,1);save(a);render()}}else{let v=norm(leads()[i]);edit=i;$('carModel').value=v.carModel;$('plate').value=v.plate==='N/D'?'':v.plate;$('city').value=v.city==='Città non specificata'?'':v.city;$('dents').value=v.dentsValue;$('size').value=v.size;$('paint').value=v.paint;$('name').value=v.name==='Cliente'?'':v.name;$('phone').value=v.phone==='N/D'?'':v.phone;panels=v.panelsArray;lastAi=v.ai||null;drawPanels();$('cancelEdit').classList.remove('hidden');$('estimateBtn').scrollIntoView({behavior:'smooth',block:'center'});alert('Dati caricati. Modifica, genera la stima e aggiorna la richiesta.')}})}
-bind();drawPanels();render();
+if ("serviceWorker" in navigator) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+
+const $ = id => document.getElementById(id);
+const KEY = "dentvision_leads";
+let points = [], panels = [], editIndex = null, current = null, textToCopy = "", previewUrls = [];
+let scene, camera, renderer, controls, raycaster, pointer, markerGroup, selectable = [], down, tween, activePointers = 0, multiTouch = false;
+
+const getLeads = () => { try { const x = JSON.parse(localStorage.getItem(KEY)||"[]"); return Array.isArray(x)?x:[]; } catch { return []; } };
+const saveLeads = x => localStorage.setItem(KEY, JSON.stringify(x));
+const esc = x => String(x??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+const norm = x => ({
+  date:x?.date||"",carModel:x?.carModel||"Auto non specificata",plate:x?.plate||"N/D",city:x?.city||"Città non specificata",
+  panels:x?.panels||"Non indicati",panelsArray:Array.isArray(x?.panelsArray)?x.panelsArray:[],
+  damagePoints:Array.isArray(x?.damagePoints)?x.damagePoints:[],dents:String(x?.dents||x?.dentsValue||"N/D"),
+  dentsValue:String(x?.dentsValue||x?.dents||""),size:x?.size||"piccola",paint:x?.paint||"no",
+  name:x?.name||"Cliente",phone:x?.phone||"N/D",suggestedPrice:Number(x?.suggestedPrice||x?.finalPrice||0),
+  finalPrice:Number(x?.finalPrice||x?.suggestedPrice||0),estimate:x?.estimate||`${x?.finalPrice||x?.suggestedPrice||"N/D"}€`,
+  severity:x?.severity||"N/D",notes:x?.notes||"Nessuna"
+});
+
+function updateDamageUI(){
+  panels = [...new Set(points.map(p=>p.panel).filter(Boolean))];
+  $("pointCount").textContent = `${points.length} punt${points.length===1?"o":"i"} danno segnat${points.length===1?"o":"i"}`;
+  $("panelSummary").textContent = `Pannelli: ${panels.length?panels.join(", "):"nessuno"}`;
+  const list=$("damageList"); list.innerHTML="";
+  if(!points.length){list.innerHTML="<p class='hint'>Nessun punto ancora. Ruota l’auto, fai zoom e tocca la zona danneggiata.</p>";return;}
+  points.forEach((p,i)=>{
+    const d=document.createElement("div");d.className="damage-item";
+    d.innerHTML=`<div><strong>Punto ${i+1} · ${esc(p.panel)}</strong><span>${esc(p.zone||"Posizione salvata")}</span></div><button data-remove="${i}">Rimuovi</button>`;
+    list.appendChild(d);
+  });
+}
+
+function marker(p){
+  if(!markerGroup)return;
+  const m=new THREE.Mesh(new THREE.SphereGeometry(.13,20,16),new THREE.MeshStandardMaterial({color:0xef4444,emissive:0x6b0f19,emissiveIntensity:.7,roughness:.28}));
+  m.position.set(p.position.x,p.position.y,p.position.z);m.castShadow=true;markerGroup.add(m);
+  const r=new THREE.Mesh(new THREE.TorusGeometry(.18,.022,8,24),new THREE.MeshBasicMaterial({color:0xffc4c4}));
+  r.position.copy(m.position);r.rotation.x=Math.PI/2;markerGroup.add(r);
+}
+function redrawMarkers(){if(!markerGroup)return;markerGroup.clear();points.forEach(marker)}
+function addPoint(panel, pos){
+  const h=pos.x<-.3?"lato SX":pos.x>.3?"lato DX":"centro";
+  const z=pos.z<-.6?"zona anteriore":pos.z>.6?"zona posteriore":"zona centrale";
+  const p={id:`${Date.now()}${Math.random()}`,panel,position:{x:+pos.x.toFixed(3),y:+pos.y.toFixed(3),z:+pos.z.toFixed(3)},zone:`${panel} · ${h}, ${z}`};
+  points.push(p);marker(p);updateDamageUI();
+}
+
+/* 3D */
+function nonBox(parent,size,pos,color,opacity=1){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(size.x,size.y,size.z),new THREE.MeshStandardMaterial({color,metalness:.35,roughness:.38,transparent:opacity<1,opacity}));
+  m.position.copy(pos);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;
+}
+function panelBox(parent,panel,size,pos,color){
+  const m=nonBox(parent,size,pos,color);m.userData.panel=panel;selectable.push(m);return m;
+}
+function wheel(parent,x,z){
+  const w=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,.28,24),new THREE.MeshStandardMaterial({color:0x111827,roughness:.7}));
+  w.position.set(x,.46,z);w.rotation.z=Math.PI/2;w.castShadow=true;parent.add(w);
+  const r=new THREE.Mesh(new THREE.CylinderGeometry(.21,.21,.3,20),new THREE.MeshStandardMaterial({color:0xcbd5e1,metalness:.8,roughness:.2}));
+  r.position.copy(w.position);r.rotation.z=Math.PI/2;parent.add(r);
+}
+function makeCar(){
+  const car=new THREE.Group();scene.add(car);
+  nonBox(car,{x:2.05,y:.72,z:4.48},new THREE.Vector3(0,.92,0),0x0b4e70);
+  panelBox(car,"Cofano",{x:1.84,y:.18,z:1.32},new THREE.Vector3(0,1.44,-1.48),0x1675a1);
+  panelBox(car,"Tetto",{x:1.65,y:.18,z:1.92},new THREE.Vector3(0,2.08,.10),0x145f86);
+  panelBox(car,"Baule",{x:1.84,y:.18,z:1.10},new THREE.Vector3(0,1.42,1.72),0x1675a1);
+  panelBox(car,"Fiancata sinistra",{x:.16,y:.70,z:2.58},new THREE.Vector3(-1.10,1.16,.05),0x12638d);
+  panelBox(car,"Fiancata destra",{x:.16,y:.70,z:2.58},new THREE.Vector3(1.10,1.16,.05),0x12638d);
+  panelBox(car,"Parafango anteriore sinistro",{x:.18,y:.62,z:.62},new THREE.Vector3(-1.12,1.18,-1.80),0x1681ad);
+  panelBox(car,"Parafango anteriore destro",{x:.18,y:.62,z:.62},new THREE.Vector3(1.12,1.18,-1.80),0x1681ad);
+  panelBox(car,"Parafango posteriore sinistro",{x:.18,y:.62,z:.62},new THREE.Vector3(-1.12,1.18,1.80),0x1681ad);
+  panelBox(car,"Parafango posteriore destro",{x:.18,y:.62,z:.62},new THREE.Vector3(1.12,1.18,1.80),0x1681ad);
+  nonBox(car,{x:1.55,y:.76,z:1.80},new THREE.Vector3(0,1.76,.12),0x091824);
+  nonBox(car,{x:1.42,y:.56,z:.78},new THREE.Vector3(0,1.94,-.38),0x71c8ec,.58);
+  nonBox(car,{x:1.42,y:.56,z:.72},new THREE.Vector3(0,1.94,.60),0x71c8ec,.58);
+  nonBox(car,{x:.44,y:.18,z:.08},new THREE.Vector3(-.57,1.09,-2.26),0xeef6ff);
+  nonBox(car,{x:.44,y:.18,z:.08},new THREE.Vector3(.57,1.09,-2.26),0xeef6ff);
+  nonBox(car,{x:.42,y:.18,z:.08},new THREE.Vector3(-.57,1.09,2.26),0xef4444);
+  nonBox(car,{x:.42,y:.18,z:.08},new THREE.Vector3(.57,1.09,2.26),0xef4444);
+  [[-1.12,-1.52],[1.12,-1.52],[-1.12,1.52],[1.12,1.52]].forEach(a=>wheel(car,...a));
+  const g=new THREE.Mesh(new THREE.CircleGeometry(5.2,48),new THREE.MeshBasicMaterial({color:0x05111d,transparent:true,opacity:.72}));
+  g.rotation.x=-Math.PI/2;g.position.y=.02;scene.add(g);
+}
+function resize3d(){
+  const c=$("viewer3d");if(!renderer||!c.clientWidth||!c.clientHeight)return;
+  camera.aspect=c.clientWidth/c.clientHeight;camera.updateProjectionMatrix();renderer.setSize(c.clientWidth,c.clientHeight,false);
+}
+function animate(){
+  requestAnimationFrame(animate);controls?.update();
+  if(tween){const t=Math.min(1,(performance.now()-tween.start)/420),e=1-Math.pow(1-t,3);camera.position.lerpVectors(tween.from,tween.to,e);controls.target.lerpVectors(tween.tf,tween.tt,e);if(t>=1)tween=null;}
+  renderer?.render(scene,camera);
+}
+function view(name){
+  const p={front:[0,2.4,-9.1],rear:[0,2.4,9.1],left:[-9.1,2.5,0],right:[9.1,2.5,0],top:[0,10.5,0],reset:[7.1,4.6,7.5]}[name];
+  tween={from:camera.position.clone(),to:new THREE.Vector3(...p),tf:controls.target.clone(),tt:new THREE.Vector3(0, name === "top" ? .9 : 1.18, 0),start:performance.now()};
+}
+function init3d(){
+  const box=$("viewer3d");scene=new THREE.Scene();scene.fog=new THREE.Fog(0x07111f,8,18);
+  camera=new THREE.PerspectiveCamera(38,box.clientWidth/box.clientHeight,.1,100);camera.position.set(7.1,4.6,7.5);
+  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;box.appendChild(renderer.domElement);
+  controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1.18,0);controls.enableDamping=true;controls.dampingFactor=.08;controls.enablePan=false;controls.minDistance=4.7;controls.maxDistance=12;controls.maxPolarAngle=Math.PI*.49;controls.minPolarAngle=Math.PI*.16;controls.update();
+  raycaster=new THREE.Raycaster();pointer=new THREE.Vector2();markerGroup=new THREE.Group();scene.add(markerGroup);
+  scene.add(new THREE.HemisphereLight(0x8edcff,0x07111f,2.2));
+  const l=new THREE.DirectionalLight(0xffffff,2.3);l.position.set(4,7,4);l.castShadow=true;l.shadow.mapSize.set(1024,1024);scene.add(l);
+  const r=new THREE.DirectionalLight(0x38bdf8,1.2);r.position.set(-5,3,-4);scene.add(r);
+  makeCar();redrawMarkers();resize3d();animate();
+  renderer.domElement.addEventListener("pointerdown",e=>{activePointers+=1;if(activePointers>1)multiTouch=true;if(activePointers===1)down={x:e.clientX,y:e.clientY,t:performance.now()}},{passive:true});
+  renderer.domElement.addEventListener("pointerup",e=>{
+    const wasMulti=multiTouch;activePointers=Math.max(0,activePointers-1);if(activePointers===0)multiTouch=false;
+    if(!down||wasMulti){down=null;return}
+    const d=Math.hypot(e.clientX-down.x,e.clientY-down.y),time=performance.now()-down.t;down=null;if(d>10||time>420)return;
+    const rect=renderer.domElement.getBoundingClientRect();pointer.x=(e.clientX-rect.left)/rect.width*2-1;pointer.y=-(e.clientY-rect.top)/rect.height*2+1;raycaster.setFromCamera(pointer,camera);
+    const hit=raycaster.intersectObjects(selectable,false)[0];if(hit)addPoint(hit.object.userData.panel,hit.point);
+  },{passive:true});
+  renderer.domElement.addEventListener("pointercancel",()=>{activePointers=0;multiTouch=false;down=null},{passive:true});
+  $("threeStatus").textContent="3D pronto";$("threeStatus").className="pill ok";
+}
+
+/* Foto */
+function clearPreview(){previewUrls.forEach(URL.revokeObjectURL);previewUrls=[];$("preview").innerHTML=""}
+
+/* Preventivo */
+function base(n){return n<=50?350:n<=200?550:n<=300?750:n<=550?950:1150}
+function makeEstimate(){
+  const dents=Math.max(1,Math.round(Number($("dents").value)||1));let price=base(dents),notes=[];
+  if(panels.length===2){price*=1.15;notes.push("2 pannelli: +15%")}else if(panels.length===3){price*=1.25;notes.push("3 pannelli: +25%")}else if(panels.length>=4){price*=1.40;notes.push("4+ pannelli: +40%")}
+  if(panels.includes("Tetto")){price*=1.15;notes.push("Tetto: +15%")}
+  if(panels.some(x=>x.startsWith("Fiancata"))){price*=1.10;notes.push("Fiancata: +10%")}
+  if($("size").value==="media"){price*=1.10;notes.push("Bolli medi: +10%")}else if($("size").value==="grande"){price*=1.25;notes.push("Bolli grandi: +25%")}
+  if($("paint").value==="si")notes.push("Vernice danneggiata: valutare carrozzeria");
+  const severity=dents>550?"molto importante":dents>200?"importante":dents>50?"medio":"lieve";
+  return {dents,price:Math.round(price/10)*10,severity,notes};
+}
+function message(d){return `DentVision AI - Nuova richiesta
+Cliente: ${d.name}
+Telefono: ${d.phone}
+Auto: ${d.carModel}
+Targa/Rif.: ${d.plate}
+Città: ${d.city}
+Pannelli: ${d.panels}
+Punti danno 3D: ${d.damagePoints.length}
+Numero bolli: ${d.dents}
+Grandezza: ${d.size}
+Vernice danneggiata: ${d.paint}
+Prezzo suggerito: ${d.suggestedPrice}€
+Prezzo finale: ${d.finalPrice}€
+Gravità: ${d.severity}
+Note: ${d.notes}`}
+
+function renderLeads(){
+  const q=$("search").value.trim().toLowerCase(), box=$("leads");box.innerHTML="";
+  const list=getLeads().map((x,i)=>({x:norm(x),i})).filter(({x})=>[x.name,x.phone,x.plate,x.carModel,x.city,x.panels].join(" ").toLowerCase().includes(q));
+  if(!list.length){box.innerHTML="<p class='hint'>Nessuna richiesta trovata.</p>";return;}
+  list.forEach(({x,i})=>{const d=document.createElement("div");d.className="lead";d.innerHTML=`<strong>${esc(x.name)}</strong> · ${esc(x.carModel)}<br>${esc(x.city)} · ${esc(x.estimate)} · ${esc(x.date)}<br><span class="small">Tel: ${esc(x.phone)} · Targa: ${esc(x.plate)} · Bolli: ${esc(x.dents)} · Pannelli: ${esc(x.panels)} · Punti 3D: ${x.damagePoints.length}</span><div class="lead-actions"><button data-action="edit" data-index="${i}">Modifica</button><button class="danger" data-action="delete" data-index="${i}">Elimina</button><a class="whatsapp" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(message(x))}">WhatsApp</a></div>`;box.appendChild(d)});
+}
+function reset(){
+  ["carModel","plate","city","dents","name","phone","finalPrice"].forEach(id=>$(id).value="");$("size").value="piccola";$("paint").value="no";$("photos").value="";clearPreview();$("result").classList.add("hidden");$("cancelEdit").classList.add("hidden");$("saveLead").textContent="Salva richiesta";
+  points=[];panels=[];redrawMarkers();updateDamageUI();editIndex=null;current=null;textToCopy="";
+}
+function load(i){
+  const x=norm(getLeads()[i]);editIndex=i;$("carModel").value=x.carModel==="Auto non specificata"?"":x.carModel;$("plate").value=x.plate==="N/D"?"":x.plate;$("city").value=x.city==="Città non specificata"?"":x.city;$("dents").value=x.dentsValue;$("size").value=x.size;$("paint").value=x.paint;$("name").value=x.name==="Cliente"?"":x.name;$("phone").value=x.phone==="N/D"?"":x.phone;points=x.damagePoints;panels=x.panelsArray.length?x.panelsArray:[...new Set(points.map(p=>p.panel))];redrawMarkers();updateDamageUI();$("cancelEdit").classList.remove("hidden");$("estimateBtn").scrollIntoView({behavior:"smooth",block:"center"});alert("Dati caricati. Modifica, genera la stima e poi aggiorna la richiesta.");
+}
+async function copy(txt){try{await navigator.clipboard.writeText(txt)}catch{const a=document.createElement("textarea");a.value=txt;a.style.position="fixed";a.style.opacity=0;document.body.appendChild(a);a.select();document.execCommand("copy");a.remove()}}
+
+function bind(){
+  document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>view(b.dataset.view)));
+  $("undoPoint").addEventListener("click",()=>{if(points.length){points.pop();redrawMarkers();updateDamageUI()}});
+  $("clearPoints").addEventListener("click",()=>{if(points.length&&confirm("Vuoi cancellare tutti i punti danno?")){points=[];panels=[];redrawMarkers();updateDamageUI()}});
+  $("damageList").addEventListener("click",e=>{const b=e.target.closest("[data-remove]");if(!b)return;points.splice(Number(b.dataset.remove),1);redrawMarkers();updateDamageUI()});
+  $("photos").addEventListener("change",()=>{clearPreview();[...$("photos").files].slice(0,8).forEach(f=>{const img=document.createElement("img"),u=URL.createObjectURL(f);previewUrls.push(u);img.src=u;img.alt="Foto veicolo";$("preview").appendChild(img)})});
+  $("estimateBtn").addEventListener("click",()=>{
+    const e=makeEstimate(),p=panels.length?panels.join(", "):"Non indicati";
+    current={date:new Date().toLocaleString("it-IT"),carModel:$("carModel").value.trim()||"Auto non specificata",plate:$("plate").value.trim()||"N/D",city:$("city").value.trim()||"Città non specificata",panels:p,panelsArray:[...panels],damagePoints:points.map(x=>({...x,position:{...x.position}})),dents:String(e.dents),dentsValue:String(e.dents),size:$("size").value,paint:$("paint").value,name:$("name").value.trim()||"Cliente",phone:$("phone").value.trim()||"N/D",suggestedPrice:e.price,finalPrice:e.price,estimate:`${e.price}€`,severity:e.severity,notes:e.notes.join(", ")||"Nessuna"};
+    $("price").textContent=`${e.price}€`;$("finalPrice").value=e.price;$("diagnosis").textContent=`Danno ${e.severity}. Bolli: ${e.dents}. Pannelli: ${p}. Punti 3D segnati: ${points.length}. ${current.notes!=="Nessuna"?"Note: "+current.notes:""}`;$("result").classList.remove("hidden");$("saveLead").textContent=editIndex===null?"Salva richiesta":"Aggiorna richiesta";textToCopy=message(current);$("whatsapp").href=`https://wa.me/?text=${encodeURIComponent(textToCopy)}`;
+  });
+  $("finalPrice").addEventListener("input",()=>{if(!current)return;const v=Number($("finalPrice").value);if(!Number.isFinite(v)||v<0)return;current.finalPrice=v;current.estimate=`${v}€`;$("price").textContent=`${v}€`;textToCopy=message(current);$("whatsapp").href=`https://wa.me/?text=${encodeURIComponent(textToCopy)}`});
+  $("saveLead").addEventListener("click",()=>{if(!current){alert("Prima genera una stima.");return}const l=getLeads();if(editIndex===null)l.unshift(current);else l[editIndex]=current;saveLeads(l);alert(editIndex===null?"Richiesta salvata.":"Richiesta aggiornata.");renderLeads();reset()});
+  $("copyText").addEventListener("click",async()=>{if(!textToCopy)return;await copy(textToCopy);alert("Testo copiato.")});
+  $("cancelEdit").addEventListener("click",reset);$("search").addEventListener("input",renderLeads);
+  $("leads").addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(!b)return;const i=Number(b.dataset.index);if(b.dataset.action==="edit")load(i);else if(b.dataset.action==="delete"&&confirm("Vuoi davvero eliminare questa richiesta?")){const l=getLeads();l.splice(i,1);saveLeads(l);renderLeads()}});
+  window.addEventListener("resize",resize3d);
+}
+bind();updateDamageUI();renderLeads();
+try{init3d()}catch(e){console.error(e);$("threeStatus").textContent="3D non disponibile";$("threeStatus").className="pill fail";$("viewer3d").innerHTML="<p class='hint' style='padding:16px'>Il motore 3D non si è avviato. Controlla la connessione e riapri la pagina.</p>"}

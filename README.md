@@ -1,31 +1,28 @@
-# DentVision AI v1.6 – IA pronta
+# DentVision AI v1.7 – Auto 3D interattiva
 
-## Cosa funziona subito
-- Tutte le funzioni della v1.5.1
-- Analisi tecnica locale delle foto: numero, definizione, luminosità e contrasto
-- Schermata IA professionale già integrata
-- Applicazione automatica di pannelli, fascia bolli, dimensione e vernice dopo un'analisi IA reale
+## Nuova funzione
+- Auto 3D generata direttamente nel browser.
+- Rotazione con un dito.
+- Zoom con due dita.
+- Tocca un punto della carrozzeria per segnare un marker rosso.
+- Ogni marker salva pannello e posizione.
+- Pulsanti rapidi: davanti, lato sinistro, lato destro, dietro, dall’alto, reset.
+- I punti danno 3D vengono salvati nell’archivio e nel testo WhatsApp.
 
-## Cosa richiede il worker
-GitHub Pages pubblica file statici e non può custodire una chiave API. Per questo l'analisi visiva reale passa dal piccolo server sicuro nella cartella `ai-worker`.
+## Nota
+Il modello 3D usa Three.js caricato dal web. Al primo avvio serve una connessione internet.
 
-### Pubblicare l'app sul tuo GitHub Pages
-Carica nella radice del repository questi file:
+## File da caricare nella radice del repository
 - index.html
 - style.css
 - app.js
 - ai-config.js
 - manifest.json
 - icon.svg
+- README.md
+- service-worker.js
 
-La cartella `ai-worker` NON va pubblicata come sito: serve per creare il Worker IA separato.
+## Messaggio commit
+DentVision AI v1.7 auto 3D interattiva
 
-### Prima prova senza worker
-Lascia `ai-config.js` così com'è. Il pulsante Analizza foto verificherà la qualità tecnica delle foto, ma non inventerà il numero di bolli. Umanità salva dall'ennesimo preventivo sparato a caso.
-
-### Collegare IA reale
-Segui `ai-worker/README.md`, poi incolla nel file `ai-config.js` l'URL del worker. Da quel momento il pulsante analizzerà le immagini e proporrà intervallo bolli, pannelli, dimensione e confidenza.
-
-
-## Aggiornamento v1.6.1
-Questa versione include `service-worker.js`, che elimina automaticamente la vecchia cache della v1.4/v1.5 dopo il primo aggiornamento. Caricare tutti i file nella radice del repository, compreso `service-worker.js`.
+Dopo il commit, apri il sito una volta aggiungendo `?v=170` alla fine dell’indirizzo. Poi reinstalla l’icona soltanto se quella vecchia non si aggiorna.

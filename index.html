@@ -2,100 +2,117 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
-  <meta name="description" content="DentVision AI - stima preliminare danni da grandine">
-  <title>DentVision AI v1.6.1</title>
-  <link rel="manifest" href="manifest.json?v=16">
-  <link rel="stylesheet" href="style.css?v=161">
+  <title>DentVision AI v1.7</title>
+  <link rel="manifest" href="manifest.json?v=170">
+  <link rel="stylesheet" href="style.css?v=170">
 </head>
 <body>
-  <main class="app">
-    <header class="hero">
-      <span class="badge">DentVision AI · v1.6.1</span>
-      <h1>Stima danni grandine</h1>
-      <p>Preventivo PDR, pannelli selezionabili e analisi foto pronta per l’IA.</p>
-    </header>
+<main class="app">
+  <header class="hero">
+    <span class="badge">DentVision AI · v1.7</span>
+    <h1>Stima danni grandine</h1>
+    <p>Auto 3D ruotabile e zoomabile per segnare con precisione i punti danno.</p>
+  </header>
 
-    <section class="card">
-      <h2>Dati veicolo</h2>
-      <div class="grid">
-        <label>Marca e modello<input id="carModel" placeholder="Es. Opel Insignia 2014" autocomplete="off"></label>
-        <label>Targa o riferimento<input id="plate" placeholder="Facoltativo" autocomplete="off"></label>
-        <label>Città<input id="city" placeholder="Es. Lissone" autocomplete="off"></label>
+  <section class="card">
+    <h2>Dati veicolo</h2>
+    <div class="grid">
+      <label>Marca e modello<input id="carModel" placeholder="Es. Opel Insignia 2014"></label>
+      <label>Targa o riferimento<input id="plate" placeholder="Facoltativo"></label>
+      <label>Città<input id="city" placeholder="Es. Lissone"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">
+      <div>
+        <h2>Mappa danni 3D</h2>
+        <p class="hint">Trascina con un dito per ruotare. Due dita per zoom. Tocca l’auto senza trascinare per mettere un puntino rosso.</p>
       </div>
-    </section>
+      <span id="threeStatus" class="pill">Caricamento…</span>
+    </div>
+    <div id="viewer3d" class="viewer3d"></div>
 
-    <section class="card">
-      <h2>Pannelli danneggiati</h2>
-      <p class="hint">Tocca i pannelli colpiti. Il verde significa selezionato, non che l’auto abbia improvvisamente trovato la pace interiore.</p>
-      <div class="mapbox">
-        <svg viewBox="0 0 720 410" class="car-map" aria-label="Schema auto vista dall'alto">
-          <rect class="outline" x="260" y="15" width="200" height="380" rx="84"/>
-          <rect class="panel" data-panel="Cofano" x="282" y="38" width="156" height="66" rx="18"/><text x="360" y="78" class="label">COFANO</text>
-          <rect class="panel" data-panel="Tetto" x="274" y="120" width="172" height="144" rx="28"/><text x="360" y="198" class="label">TETTO</text>
-          <rect class="panel" data-panel="Baule" x="282" y="280" width="156" height="68" rx="18"/><text x="360" y="320" class="label">BAULE</text>
-          <rect class="panel" data-panel="Fiancata sinistra" x="66" y="138" width="170" height="118" rx="24"/><text x="151" y="202" class="label">FIANCATA SX</text>
-          <rect class="panel" data-panel="Fiancata destra" x="484" y="138" width="170" height="118" rx="24"/><text x="569" y="202" class="label">FIANCATA DX</text>
-          <circle class="panel" data-panel="Parafango anteriore sinistro" cx="108" cy="82" r="42"/><circle class="panel" data-panel="Parafango anteriore destro" cx="612" cy="82" r="42"/>
-          <circle class="panel" data-panel="Parafango posteriore sinistro" cx="108" cy="330" r="42"/><circle class="panel" data-panel="Parafango posteriore destro" cx="612" cy="330" r="42"/>
-          <text x="108" y="87" class="mini">ANT.</text><text x="612" y="87" class="mini">ANT.</text><text x="108" y="335" class="mini">POST.</text><text x="612" y="335" class="mini">POST.</text>
-        </svg>
-      </div>
-      <p id="selectedPanels" class="selected">Pannelli selezionati: nessuno</p>
-      <button id="clearPanels" class="secondary" type="button">Cancella pannelli</button>
-    </section>
+    <div class="views">
+      <button data-view="front">Davanti</button>
+      <button data-view="left">Lato SX</button>
+      <button data-view="right">Lato DX</button>
+      <button data-view="rear">Dietro</button>
+      <button data-view="top">Dall’alto</button>
+      <button data-view="reset" class="secondary">Reset</button>
+    </div>
 
-    <section class="card ai-card">
-      <div class="section-title-row"><h2>Analisi foto con IA</h2><span id="aiMode" class="mode-chip">IA non collegata</span></div>
-      <p class="hint">Carica almeno 3 foto: una panoramica, una con luce radente e un dettaglio. L’IA prepara una <strong>stima preliminare</strong>; la decisione PDR resta tua.</p>
-      <input id="photos" type="file" accept="image/*" capture="environment" multiple>
-      <div id="preview" class="preview"></div>
-      <div id="photoCheck" class="photo-check hidden"></div>
-      <div class="actions">
-        <button id="analyzeAi" type="button">Analizza foto</button>
-        <button id="applyAi" type="button" class="secondary hidden">Applica stima IA</button>
-      </div>
-      <div id="aiResult" class="ai-result hidden"></div>
-    </section>
+    <div class="damage-summary">
+      <strong id="pointCount">0 punti danno segnati</strong>
+      <span id="panelSummary">Pannelli: nessuno</span>
+    </div>
+    <div id="damageList" class="damage-list"></div>
+    <div class="actions">
+      <button id="undoPoint" class="secondary">Togli ultimo punto</button>
+      <button id="clearPoints" class="danger">Cancella punti</button>
+    </div>
+  </section>
 
-    <section class="card">
-      <h2>Danno e listino</h2>
-      <div class="grid">
-        <label>Numero bolli<input id="dents" type="number" min="1" step="1" inputmode="numeric" placeholder="Es. 250"></label>
-        <label>Grandezza media<select id="size"><option value="piccola">Piccola</option><option value="media">Media</option><option value="grande">Grande</option></select></label>
-        <label>Vernice danneggiata?<select id="paint"><option value="no">No / non sembra</option><option value="si">Sì</option></select></label>
-      </div>
-      <div class="listino">1-50: 350€ · 51-200: 550€ · 201-300: 750€ · 301-550: 950€ · oltre 550: 1.150€</div>
-    </section>
+  <section class="card">
+    <h2>Foto e IA</h2>
+    <p class="hint">Puoi già allegare le foto. Il collegamento alla vera IA resta predisposto per il prossimo passo.</p>
+    <input id="photos" type="file" accept="image/*" capture="environment" multiple>
+    <div id="preview" class="preview"></div>
+  </section>
 
-    <section class="card">
-      <h2>Cliente</h2>
-      <div class="grid"><label>Nome<input id="name" placeholder="Nome cliente"></label><label>Telefono<input id="phone" placeholder="+39..." inputmode="tel"></label></div>
-      <button id="estimateBtn" type="button">Genera stima</button>
-      <button id="cancelEdit" class="secondary hidden" type="button">Annulla modifica</button>
-    </section>
+  <section class="card">
+    <h2>Danno e listino</h2>
+    <div class="grid">
+      <label>Numero bolli<input id="dents" type="number" min="1" inputmode="numeric" placeholder="Es. 250"></label>
+      <label>Grandezza media
+        <select id="size">
+          <option value="piccola">Piccola</option>
+          <option value="media">Media</option>
+          <option value="grande">Grande</option>
+        </select>
+      </label>
+      <label>Vernice danneggiata?
+        <select id="paint">
+          <option value="no">No / non sembra</option>
+          <option value="si">Sì</option>
+        </select>
+      </label>
+    </div>
+    <div class="listino"><strong>Listino:</strong> 1-50: 350€ · 51-200: 550€ · 201-300: 750€ · 301-550: 950€ · oltre 550: 1.150€</div>
+  </section>
 
-    <section id="result" class="card hidden">
-      <h2>Risultato</h2>
-      <div id="price" class="price">—</div><p id="diagnosis"></p>
-      <label>Prezzo finale modificabile<input id="finalPrice" type="number" min="0" step="10" inputmode="numeric"></label>
-      <div class="actions"><button id="saveLead" type="button">Salva richiesta</button><button id="copyText" type="button">Copia testo</button><a id="whatsapp" class="whatsapp" target="_blank" rel="noopener">WhatsApp</a></div>
-    </section>
+  <section class="card">
+    <h2>Cliente</h2>
+    <div class="grid">
+      <label>Nome<input id="name" placeholder="Nome cliente"></label>
+      <label>Telefono<input id="phone" placeholder="+39..." inputmode="tel"></label>
+    </div>
+    <div class="actions">
+      <button id="estimateBtn">Genera stima</button>
+      <button id="cancelEdit" class="secondary hidden">Annulla modifica</button>
+    </div>
+  </section>
 
-    <section class="card">
-      <h2>Archivio richieste</h2>
-      <input id="search" placeholder="Cerca nome, telefono, targa, auto, città o pannelli...">
-      <div id="leads"></div>
-    </section>
-  </main>
-  <script src="ai-config.js?v=161"></script>
-  <script src="app.js?v=161"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./service-worker.js?v=161', { scope: './' })
-        .catch(function (error) { console.warn('Service worker reset:', error); });
-    }
-  </script>
+  <section id="result" class="card hidden">
+    <h2>Risultato</h2>
+    <div id="price" class="price">—</div>
+    <p id="diagnosis"></p>
+    <label>Prezzo finale modificabile<input id="finalPrice" type="number" min="0" step="10" inputmode="numeric"></label>
+    <div class="actions">
+      <button id="saveLead">Salva richiesta</button>
+      <button id="copyText">Copia testo</button>
+      <a id="whatsapp" class="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Archivio richieste</h2>
+    <input id="search" placeholder="Cerca nome, targa, auto, città o pannelli...">
+    <div id="leads"></div>
+  </section>
+</main>
+<script type="module" src="app.js?v=170"></script>
 </body>
 </html>
