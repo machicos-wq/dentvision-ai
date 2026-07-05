@@ -1,11 +1,17 @@
-# DentVision AI v1.7.1 – Correzione auto 3D
+# DentVision AI v1.7.2 – Auto 3D offline corretta
 
-## Errore corretto
-La scena 3D restava vuota perché `OrbitControls` richiedeva Three.js con un import interno che il browser non riusciva a risolvere.
+## Perché questa versione funziona
+La versione precedente dipendeva da Three.js e da file esterni. Sul telefono il caricamento del modulo esterno restava bloccato, quindi il riquadro rimaneva vuoto.
 
-La versione 1.7.1 aggiunge una **import map** nel file `index.html`, così Chrome sa esattamente da dove caricare sia Three.js sia i controlli per rotazione e zoom.
+Questa versione:
+- non scarica Three.js;
+- disegna l'auto 3D direttamente con Canvas;
+- ruota con un dito;
+- zooma con due dita;
+- salva un puntino rosso nel punto toccato;
+- funziona anche quando la rete è lenta, perché il motore 3D è tutto dentro `app.js`.
 
-## File da caricare nella radice del repository
+## File da caricare nella radice GitHub
 - index.html
 - style.css
 - app.js
@@ -16,6 +22,6 @@ La versione 1.7.1 aggiunge una **import map** nel file `index.html`, così Chrom
 - service-worker.js
 
 ## Commit
-`DentVision AI v1.7.1 correzione auto 3D`
+DentVision AI v1.7.2 auto 3D offline corretta
 
-Dopo il commit apri una volta il sito da Chrome con `?v=171` alla fine dell’indirizzo. La prima apertura richiede connessione internet per scaricare il motore 3D.
+Apri il sito con `?v=172` alla fine dell'indirizzo dopo il commit.

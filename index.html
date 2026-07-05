@@ -4,123 +4,137 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
-  <title>DentVision AI v1.7.1</title>
-  <link rel="manifest" href="manifest.json?v=171">
-  <link rel="stylesheet" href="style.css?v=171">
+  <meta name="description" content="DentVision AI - preventivi PDR con auto 3D offline">
+  <title>DentVision AI v1.7.2</title>
+  <link rel="manifest" href="manifest.json?v=172">
+  <link rel="stylesheet" href="style.css?v=172">
 </head>
 <body>
-<main class="app">
-  <header class="hero">
-    <span class="badge">DentVision AI · v1.7.1</span>
-    <h1>Stima danni grandine</h1>
-    <p>Auto 3D ruotabile e zoomabile per segnare con precisione i punti danno.</p>
-  </header>
+  <main class="app">
+    <header class="hero">
+      <span class="badge">DentVision AI · v1.7.2</span>
+      <h1>Stima danni grandine</h1>
+      <p>Auto 3D ruotabile e zoomabile, senza dipendere da librerie esterne.</p>
+    </header>
 
-  <section class="card">
-    <h2>Dati veicolo</h2>
-    <div class="grid">
-      <label>Marca e modello<input id="carModel" placeholder="Es. Opel Insignia 2014"></label>
-      <label>Targa o riferimento<input id="plate" placeholder="Facoltativo"></label>
-      <label>Città<input id="city" placeholder="Es. Lissone"></label>
-    </div>
-  </section>
-
-  <section class="card">
-    <div class="head">
-      <div>
-        <h2>Mappa danni 3D</h2>
-        <p class="hint">Trascina con un dito per ruotare. Due dita per zoom. Tocca l’auto senza trascinare per mettere un puntino rosso.</p>
+    <section class="card">
+      <h2>Dati veicolo</h2>
+      <div class="grid">
+        <label>Marca e modello
+          <input id="carModel" placeholder="Es. Opel Insignia 2014" autocomplete="off">
+        </label>
+        <label>Targa o riferimento
+          <input id="plate" placeholder="Facoltativo" autocomplete="off">
+        </label>
+        <label>Città
+          <input id="city" placeholder="Es. Lissone" autocomplete="off">
+        </label>
       </div>
-      <span id="threeStatus" class="pill">Caricamento…</span>
-    </div>
-    <div id="viewer3d" class="viewer3d"></div>
+    </section>
 
-    <div class="views">
-      <button data-view="front">Davanti</button>
-      <button data-view="left">Lato SX</button>
-      <button data-view="right">Lato DX</button>
-      <button data-view="rear">Dietro</button>
-      <button data-view="top">Dall’alto</button>
-      <button data-view="reset" class="secondary">Reset</button>
-    </div>
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>Mappa danni 3D</h2>
+          <p class="hint">Trascina un dito per ruotare. Usa due dita per zoomare. Tocca senza trascinare per mettere un punto rosso sul pannello.</p>
+        </div>
+        <span id="threeStatus" class="status-pill ok">3D pronto offline</span>
+      </div>
 
-    <div class="damage-summary">
-      <strong id="pointCount">0 punti danno segnati</strong>
-      <span id="panelSummary">Pannelli: nessuno</span>
-    </div>
-    <div id="damageList" class="damage-list"></div>
-    <div class="actions">
-      <button id="undoPoint" class="secondary">Togli ultimo punto</button>
-      <button id="clearPoints" class="danger">Cancella punti</button>
-    </div>
-  </section>
+      <div class="canvas-shell">
+        <canvas id="carCanvas" aria-label="Auto 3D interattiva"></canvas>
+      </div>
 
-  <section class="card">
-    <h2>Foto e IA</h2>
-    <p class="hint">Puoi già allegare le foto. Il collegamento alla vera IA resta predisposto per il prossimo passo.</p>
-    <input id="photos" type="file" accept="image/*" capture="environment" multiple>
-    <div id="preview" class="preview"></div>
-  </section>
+      <div class="view-controls">
+        <button type="button" data-view="front">Davanti</button>
+        <button type="button" data-view="left">Lato SX</button>
+        <button type="button" data-view="right">Lato DX</button>
+        <button type="button" data-view="rear">Dietro</button>
+        <button type="button" data-view="top">Dall’alto</button>
+        <button type="button" data-view="reset" class="secondary">Reset</button>
+      </div>
 
-  <section class="card">
-    <h2>Danno e listino</h2>
-    <div class="grid">
-      <label>Numero bolli<input id="dents" type="number" min="1" inputmode="numeric" placeholder="Es. 250"></label>
-      <label>Grandezza media
-        <select id="size">
-          <option value="piccola">Piccola</option>
-          <option value="media">Media</option>
-          <option value="grande">Grande</option>
-        </select>
+      <div class="damage-summary">
+        <strong id="pointCount">0 punti danno segnati</strong>
+        <span id="panelSummary">Pannelli: nessuno</span>
+      </div>
+      <div id="damageList" class="damage-list"></div>
+
+      <div class="actions">
+        <button id="undoPoint" type="button" class="secondary">Togli ultimo punto</button>
+        <button id="clearPoints" type="button" class="danger">Cancella punti</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Foto del danno</h2>
+      <p class="hint">Le foto restano sul telefono in questa versione. L’analisi IA reale verrà collegata dopo, senza mettere chiavi segrete dentro il sito.</p>
+      <input id="photos" type="file" accept="image/*" capture="environment" multiple>
+      <div id="preview" class="preview"></div>
+      <button id="checkPhotos" type="button" class="secondary">Controlla qualità foto</button>
+      <div id="photoCheck" class="photo-check hidden"></div>
+    </section>
+
+    <section class="card">
+      <h2>Danno e listino</h2>
+      <div class="grid">
+        <label>Numero bolli
+          <input id="dents" type="number" min="1" step="1" inputmode="numeric" placeholder="Es. 250">
+        </label>
+        <label>Grandezza media
+          <select id="size">
+            <option value="piccola">Piccola</option>
+            <option value="media">Media</option>
+            <option value="grande">Grande</option>
+          </select>
+        </label>
+        <label>Vernice danneggiata?
+          <select id="paint">
+            <option value="no">No / non sembra</option>
+            <option value="si">Sì</option>
+          </select>
+        </label>
+      </div>
+      <div class="listino"><strong>Listino base:</strong> 1-50: 350€ · 51-200: 550€ · 201-300: 750€ · 301-550: 950€ · oltre 550: 1.150€</div>
+    </section>
+
+    <section class="card">
+      <h2>Cliente</h2>
+      <div class="grid">
+        <label>Nome
+          <input id="name" placeholder="Nome cliente" autocomplete="off">
+        </label>
+        <label>Telefono
+          <input id="phone" placeholder="+39..." inputmode="tel" autocomplete="off">
+        </label>
+      </div>
+      <div class="actions">
+        <button id="estimateBtn" type="button">Genera stima</button>
+        <button id="cancelEdit" class="secondary hidden" type="button">Annulla modifica</button>
+      </div>
+    </section>
+
+    <section id="result" class="card hidden">
+      <h2>Risultato</h2>
+      <div id="price" class="price">—</div>
+      <p id="diagnosis"></p>
+      <label>Prezzo finale modificabile
+        <input id="finalPrice" type="number" min="0" step="10" inputmode="numeric">
       </label>
-      <label>Vernice danneggiata?
-        <select id="paint">
-          <option value="no">No / non sembra</option>
-          <option value="si">Sì</option>
-        </select>
-      </label>
-    </div>
-    <div class="listino"><strong>Listino:</strong> 1-50: 350€ · 51-200: 550€ · 201-300: 750€ · 301-550: 950€ · oltre 550: 1.150€</div>
-  </section>
+      <div class="actions">
+        <button id="saveLead" type="button">Salva richiesta</button>
+        <button id="copyText" type="button">Copia testo</button>
+        <a id="whatsapp" class="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+    </section>
 
-  <section class="card">
-    <h2>Cliente</h2>
-    <div class="grid">
-      <label>Nome<input id="name" placeholder="Nome cliente"></label>
-      <label>Telefono<input id="phone" placeholder="+39..." inputmode="tel"></label>
-    </div>
-    <div class="actions">
-      <button id="estimateBtn">Genera stima</button>
-      <button id="cancelEdit" class="secondary hidden">Annulla modifica</button>
-    </div>
-  </section>
-
-  <section id="result" class="card hidden">
-    <h2>Risultato</h2>
-    <div id="price" class="price">—</div>
-    <p id="diagnosis"></p>
-    <label>Prezzo finale modificabile<input id="finalPrice" type="number" min="0" step="10" inputmode="numeric"></label>
-    <div class="actions">
-      <button id="saveLead">Salva richiesta</button>
-      <button id="copyText">Copia testo</button>
-      <a id="whatsapp" class="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Archivio richieste</h2>
-    <input id="search" placeholder="Cerca nome, targa, auto, città o pannelli...">
-    <div id="leads"></div>
-  </section>
-</main>
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-  }
-}
-</script>
-<script type="module" src="app.js?v=171"></script>
+    <section class="card">
+      <h2>Archivio richieste</h2>
+      <input id="search" placeholder="Cerca nome, telefono, targa, auto, città o pannelli...">
+      <div id="leads"></div>
+    </section>
+  </main>
+  <script src="ai-config.js?v=172"></script>
+  <script src="app.js?v=172" defer></script>
 </body>
 </html>
