@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
-  <meta name="description" content="DentVision AI - preventivi PDR con auto 3D offline">
-  <title>DentVision AI v1.7.2</title>
-  <link rel="manifest" href="manifest.json?v=172">
-  <link rel="stylesheet" href="style.css?v=172">
+  <meta name="description" content="DentVision AI - auto 3D offline migliorata">
+  <title>DentVision AI v1.7.4</title>
+  <link rel="manifest" href="manifest.json?v=174">
+  <link rel="stylesheet" href="style.css?v=174">
 </head>
 <body>
   <main class="app">
     <header class="hero">
-      <span class="badge">DentVision AI · v1.7.2</span>
+      <span class="badge">DentVision AI · v1.7.4</span>
       <h1>Stima danni grandine</h1>
-      <p>Auto 3D ruotabile e zoomabile, senza dipendere da librerie esterne.</p>
+      <p>Auto 3D più rifinita, ruotabile e zoomabile, sempre offline.</p>
     </header>
 
     <section class="card">
@@ -36,9 +36,9 @@
       <div class="section-head">
         <div>
           <h2>Mappa danni 3D</h2>
-          <p class="hint">Trascina un dito per ruotare. Usa due dita per zoomare. Tocca senza trascinare per mettere un punto rosso sul pannello.</p>
+          <p class="hint">Trascina un dito per ruotare. Due dita per zoom. Tocca l’auto senza trascinare per mettere un puntino rosso.</p>
         </div>
-        <span id="threeStatus" class="status-pill ok">3D pronto offline</span>
+        <span id="threeStatus" class="status-pill ok">3D migliorato</span>
       </div>
 
       <div class="canvas-shell">
@@ -68,10 +68,15 @@
 
     <section class="card">
       <h2>Foto del danno</h2>
-      <p class="hint">Le foto restano sul telefono in questa versione. L’analisi IA reale verrà collegata dopo, senza mettere chiavi segrete dentro il sito.</p>
-      <input id="photos" type="file" accept="image/*" capture="environment" multiple>
+      <p class="hint">Scegli le immagini già presenti nella galleria del telefono. Qui non si apre più la fotocamera automaticamente.</p>
+
+      <input id="photos" type="file" accept="image/*" multiple hidden>
+      <div class="actions">
+        <button id="pickPhotos" type="button">Scegli dalle foto</button>
+        <button id="checkPhotos" type="button" class="secondary">Controlla qualità foto</button>
+      </div>
+
       <div id="preview" class="preview"></div>
-      <button id="checkPhotos" type="button" class="secondary">Controlla qualità foto</button>
       <div id="photoCheck" class="photo-check hidden"></div>
     </section>
 
@@ -134,7 +139,7 @@
       <div id="leads"></div>
     </section>
   </main>
-  <script src="ai-config.js?v=172"></script>
-  <script src="app.js?v=172" defer></script>
+  <script src="ai-config.js?v=174"></script>
+  <script src="app.js?v=174" defer></script>
 </body>
 </html>

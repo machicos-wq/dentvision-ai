@@ -1,8 +1,8 @@
 {
   "name": "DentVision AI",
   "short_name": "DentVision",
-  "description": "Preventivi PDR con mappa danni 3D offline",
-  "start_url": "./?v=172",
+  "description": "Preventivi PDR con mappa danni 3D offline migliorata",
+  "start_url": "./?v=174",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",

@@ -1,3 +1,2 @@
-// Riservato per una futura IA online sicura.
-// Non inserire chiavi API in questo file.
+// Riservato per futura IA online sicura.
 window.DENTVISION_AI_ENDPOINT = "";

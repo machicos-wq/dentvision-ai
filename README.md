@@ -1,15 +1,12 @@
-# DentVision AI v1.7.2 – Auto 3D offline corretta
+# DentVision AI v1.7.4 – Auto migliorata
 
-## Perché questa versione funziona
-La versione precedente dipendeva da Three.js e da file esterni. Sul telefono il caricamento del modulo esterno restava bloccato, quindi il riquadro rimaneva vuoto.
+Questa versione mantiene il 3D offline, ma rifà la macchina in modo più automobilistico:
 
-Questa versione:
-- non scarica Three.js;
-- disegna l'auto 3D direttamente con Canvas;
-- ruota con un dito;
-- zooma con due dita;
-- salva un puntino rosso nel punto toccato;
-- funziona anche quando la rete è lenta, perché il motore 3D è tutto dentro `app.js`.
+- frontale e retro più leggibili
+- cofano, tetto e baule più rifiniti
+- vetri, fari, specchietti, paraurti
+- selezione pannelli ancora funzionante
+- niente dipendenze esterne
 
 ## File da caricare nella radice GitHub
 - index.html
@@ -22,6 +19,16 @@ Questa versione:
 - service-worker.js
 
 ## Commit
-DentVision AI v1.7.2 auto 3D offline corretta
+DentVision AI v1.7.4 auto migliorata offline
 
-Apri il sito con `?v=172` alla fine dell'indirizzo dopo il commit.
+
+## Correzione v1.7.4 – Galleria foto
+Il campo foto non usa più `capture="environment"`, che su Android apriva direttamente la fotocamera.
+
+Ora c'è il pulsante **Scegli dalle foto**:
+- apre la galleria / gestione file del telefono;
+- consente di scegliere immagini già scattate;
+- non obbliga ad aprire la fotocamera.
+
+Commit consigliato:
+`DentVision AI v1.7.4 scelta foto da galleria`
