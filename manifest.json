@@ -1,8 +1,8 @@
 {
   "name": "DentVision AI",
   "short_name": "DentVision",
-  "description": "Preventivi PDR con berlina 3D, galleria e fotocamera separate",
-  "start_url": "./?v=176",
+  "description": "Preventivi PDR con modello 3D reale",
+  "start_url": "./?v=180",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",

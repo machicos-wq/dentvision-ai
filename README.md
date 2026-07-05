@@ -1,12 +1,18 @@
-# DentVision AI v1.7.6 – Auto migliorata
+# DentVision AI v1.8.0 – modello 3D reale
 
-Questa versione mantiene il 3D offline, ma rifà la macchina in modo più automobilistico:
+Questa versione sostituisce l'auto disegnata a mano con il file `generic_sedan_car.glb` ricevuto.
 
-- frontale e retro più leggibili
-- cofano, tetto e baule più rifiniti
-- vetri, fari, specchietti, paraurti
-- selezione pannelli ancora funzionante
-- niente dipendenze esterne
+## Cosa cambia
+- Berlina 3D reale in GLB, inclusa nella cartella del sito.
+- Rotazione e zoom con le dita tramite `model-viewer`.
+- Tocca la carrozzeria per creare un hotspot rosso fissato sulla superficie del modello.
+- I puntini vengono salvati nella pratica e ripristinati quando modifichi una richiesta.
+- Galleria e fotocamera restano separate.
+
+## Importante
+Il file GLB ricevuto non contiene pannelli della carrozzeria nominati separatamente come cofano, tetto e porte. Quindi l'app salva il punto esatto, ma lo chiama `Carrozzeria 3D`; per la selezione automatica del pannello serve un modello GLB preparato con quei pezzi separati e nominati.
+
+Il modello 3D è un file locale nel repository. Il componente che lo mostra viene caricato da CDN, con tentativo di riserva su un secondo CDN: per la prima apertura serve internet.
 
 ## File da caricare nella radice GitHub
 - index.html
@@ -17,40 +23,10 @@ Questa versione mantiene il 3D offline, ma rifà la macchina in modo più automo
 - icon.svg
 - README.md
 - service-worker.js
+- generic_sedan_car.glb
 
 ## Commit
-DentVision AI v1.7.6 auto migliorata offline
+`DentVision AI v1.8.0 modello 3D reale`
 
-
-## Correzione v1.7.6 – Galleria foto
-Il campo foto non usa più `capture="environment"`, che su Android apriva direttamente la fotocamera.
-
-Ora c'è il pulsante **Scegli dalle foto**:
-- apre la galleria / gestione file del telefono;
-- consente di scegliere immagini già scattate;
-- non obbliga ad aprire la fotocamera.
-
-Commit consigliato:
-`DentVision AI v1.7.6 scelta foto da galleria`
-
-
-## v1.7.6 – Berlina e galleria corretta
-- Auto trasformata in una berlina 3D più slanciata: cofano, parabrezza, tetto, lunotto, baule, porte, fari, calandra, targa e specchietti.
-- La vista iniziale mostra il frontale, non più il retro.
-- La galleria usa un `label` collegato direttamente al campo file, senza `capture` e senza il tipo generico `image/*`.
-- Il pulsante **Scegli dalla galleria** apre il selettore foto/file Android invece della fotocamera.
-
-Commit:
-`DentVision AI v1.7.6 berlina 3D e galleria corretta`
-
-
-## v1.7.6 – Galleria e fotocamera separate
-Ora ci sono tre comandi chiari:
-- **Apri galleria**: per scegliere foto già presenti sul telefono. Non ha `capture`, quindi non deve richiamare la fotocamera.
-- **Scatta foto**: apre volutamente la fotocamera posteriore.
-- **Rimuovi foto**: cancella tutte le immagini selezionate. Ogni anteprima ha anche la sua X per rimuovere una foto singola.
-
-Nota: nei browser Android non esiste un comando web universale che obblighi il sistema a usare solo una specifica app Galleria. Questa configurazione usa il selettore file/foto senza `capture`, cioè la via standard che mostra le foto/file esistenti.
-
-Commit:
-`DentVision AI v1.7.6 galleria e fotocamera separate`
+## Crediti modello
+Metadata nel GLB: **Generic Sedan Car**, autore **assetfactory**, licenza **Sketchfab Standard**.
