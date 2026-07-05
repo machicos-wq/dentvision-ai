@@ -2,7 +2,7 @@
   "name": "DentVision AI",
   "short_name": "DentVision",
   "description": "Preventivi PDR con mappa danni 3D",
-  "start_url": "./?v=170",
+  "start_url": "./?v=171",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",

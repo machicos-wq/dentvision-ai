@@ -1,16 +1,9 @@
-# DentVision AI v1.7 – Auto 3D interattiva
+# DentVision AI v1.7.1 – Correzione auto 3D
 
-## Nuova funzione
-- Auto 3D generata direttamente nel browser.
-- Rotazione con un dito.
-- Zoom con due dita.
-- Tocca un punto della carrozzeria per segnare un marker rosso.
-- Ogni marker salva pannello e posizione.
-- Pulsanti rapidi: davanti, lato sinistro, lato destro, dietro, dall’alto, reset.
-- I punti danno 3D vengono salvati nell’archivio e nel testo WhatsApp.
+## Errore corretto
+La scena 3D restava vuota perché `OrbitControls` richiedeva Three.js con un import interno che il browser non riusciva a risolvere.
 
-## Nota
-Il modello 3D usa Three.js caricato dal web. Al primo avvio serve una connessione internet.
+La versione 1.7.1 aggiunge una **import map** nel file `index.html`, così Chrome sa esattamente da dove caricare sia Three.js sia i controlli per rotazione e zoom.
 
 ## File da caricare nella radice del repository
 - index.html
@@ -22,7 +15,7 @@ Il modello 3D usa Three.js caricato dal web. Al primo avvio serve una connession
 - README.md
 - service-worker.js
 
-## Messaggio commit
-DentVision AI v1.7 auto 3D interattiva
+## Commit
+`DentVision AI v1.7.1 correzione auto 3D`
 
-Dopo il commit, apri il sito una volta aggiungendo `?v=170` alla fine dell’indirizzo. Poi reinstalla l’icona soltanto se quella vecchia non si aggiorna.
+Dopo il commit apri una volta il sito da Chrome con `?v=171` alla fine dell’indirizzo. La prima apertura richiede connessione internet per scaricare il motore 3D.
