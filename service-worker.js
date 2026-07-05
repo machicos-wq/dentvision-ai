@@ -1,1 +1,15 @@
-const CACHE="dentvision-v15-pannelli";const FILES=["./","index.html?v=15","style.css?v=15","app.js?v=15","manifest.json?v=15","icon.svg"];self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)))});self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.map(k=>{if(k!==CACHE)return caches.delete(k)}))).then(()=>self.clients.claim()))});self.addEventListener("fetch",e=>{e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy)).catch(()=>{});return r}).catch(()=>caches.match(e.request)))});
+// DentVision AI v1.6.1 - pulizia forzata cache precedente
+self.addEventListener('install', function (event) {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', function (event) {
+  event.waitUntil((async function () {
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(function (name) { return caches.delete(name); }));
+    await self.clients.claim();
+    await self.registration.unregister();
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    windows.forEach(function (client) { client.navigate(client.url); });
+  })());
+});

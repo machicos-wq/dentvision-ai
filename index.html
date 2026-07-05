@@ -1,37 +1,101 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>DentVision AI v1.5</title><meta name="theme-color" content="#0f172a"><link rel="manifest" href="manifest.json?v=15"><link rel="stylesheet" href="style.css?v=15"></head>
-<body><main class="app">
-<section class="hero"><p class="badge">DentVision AI · PWA v1.5</p><h1>Stima danni grandine</h1><p>Listino professionale, prezzo modificabile e selezione pannelli su disegno auto.</p></section>
-<section class="card"><h2>Dati veicolo</h2><div class="grid"><label>Marca e modello<input id="carModel" placeholder="Es. Opel Insignia 2014"></label><label>Targa o riferimento<input id="plate" placeholder="Facoltativo"></label><label>Città<input id="city" placeholder="Es. Lissone"></label></div></section>
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="DentVision AI - stima preliminare danni da grandine">
+  <title>DentVision AI v1.6.1</title>
+  <link rel="manifest" href="manifest.json?v=16">
+  <link rel="stylesheet" href="style.css?v=161">
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <span class="badge">DentVision AI · v1.6.1</span>
+      <h1>Stima danni grandine</h1>
+      <p>Preventivo PDR, pannelli selezionabili e analisi foto pronta per l’IA.</p>
+    </header>
 
-<section class="card"><h2>Pannelli danneggiati</h2><p class="hint">Tocca i pannelli colpiti. Puoi selezionarne più di uno.</p>
-<div class="car-wrap">
-<svg class="car-svg" viewBox="0 0 720 420" role="img" aria-label="Schema auto">
-<rect class="panel" data-panel="Cofano" x="260" y="35" width="200" height="70" rx="22"/>
-<rect class="panel" data-panel="Parabrezza/Zona anteriore" x="280" y="112" width="160" height="48" rx="18"/>
-<rect class="panel" data-panel="Tetto" x="250" y="168" width="220" height="92" rx="28"/>
-<rect class="panel" data-panel="Lunotto/Zona posteriore" x="280" y="268" width="160" height="48" rx="18"/>
-<rect class="panel" data-panel="Baule" x="260" y="323" width="200" height="62" rx="22"/>
-<rect class="panel" data-panel="Fiancata sinistra" x="70" y="150" width="155" height="135" rx="28"/>
-<rect class="panel" data-panel="Fiancata destra" x="495" y="150" width="155" height="135" rx="28"/>
-<circle class="panel" data-panel="Parafango ant. sinistro" cx="110" cy="95" r="45"/>
-<circle class="panel" data-panel="Parafango ant. destro" cx="610" cy="95" r="45"/>
-<circle class="panel" data-panel="Parafango post. sinistro" cx="110" cy="335" r="45"/>
-<circle class="panel" data-panel="Parafango post. destro" cx="610" cy="335" r="45"/>
-<text class="car-label" x="360" y="78">COFANO</text><text class="car-label" x="360" y="225">TETTO</text><text class="car-label" x="360" y="360">BAULE</text>
-<text class="car-label" x="147" y="222">FIANCATA SX</text><text class="car-label" x="572" y="222">FIANCATA DX</text>
-</svg>
-<div id="selectedPanels" class="selected-list">Pannelli selezionati: nessuno</div>
-</div>
-</section>
+    <section class="card">
+      <h2>Dati veicolo</h2>
+      <div class="grid">
+        <label>Marca e modello<input id="carModel" placeholder="Es. Opel Insignia 2014" autocomplete="off"></label>
+        <label>Targa o riferimento<input id="plate" placeholder="Facoltativo" autocomplete="off"></label>
+        <label>Città<input id="city" placeholder="Es. Lissone" autocomplete="off"></label>
+      </div>
+    </section>
 
-<section class="card"><h2>Danno</h2><div class="grid">
-<label>Numero bolli<input id="dents" type="number" min="1" step="1" placeholder="Es. 250"></label>
-<label>Grandezza media<select id="size"><option value="piccola">Piccola</option><option value="media">Media</option><option value="grande">Grande</option></select></label>
-<label>Vernice danneggiata?<select id="paint"><option value="no">No / non sembra</option><option value="si">Sì</option></select></label>
-</div><div class="price-box"><p class="hint">Listino base: 1-50 = 350€, 51-200 = 550€, 201-300 = 750€, 301-550 = 950€, oltre 550 = 1150€.</p></div></section>
+    <section class="card">
+      <h2>Pannelli danneggiati</h2>
+      <p class="hint">Tocca i pannelli colpiti. Il verde significa selezionato, non che l’auto abbia improvvisamente trovato la pace interiore.</p>
+      <div class="mapbox">
+        <svg viewBox="0 0 720 410" class="car-map" aria-label="Schema auto vista dall'alto">
+          <rect class="outline" x="260" y="15" width="200" height="380" rx="84"/>
+          <rect class="panel" data-panel="Cofano" x="282" y="38" width="156" height="66" rx="18"/><text x="360" y="78" class="label">COFANO</text>
+          <rect class="panel" data-panel="Tetto" x="274" y="120" width="172" height="144" rx="28"/><text x="360" y="198" class="label">TETTO</text>
+          <rect class="panel" data-panel="Baule" x="282" y="280" width="156" height="68" rx="18"/><text x="360" y="320" class="label">BAULE</text>
+          <rect class="panel" data-panel="Fiancata sinistra" x="66" y="138" width="170" height="118" rx="24"/><text x="151" y="202" class="label">FIANCATA SX</text>
+          <rect class="panel" data-panel="Fiancata destra" x="484" y="138" width="170" height="118" rx="24"/><text x="569" y="202" class="label">FIANCATA DX</text>
+          <circle class="panel" data-panel="Parafango anteriore sinistro" cx="108" cy="82" r="42"/><circle class="panel" data-panel="Parafango anteriore destro" cx="612" cy="82" r="42"/>
+          <circle class="panel" data-panel="Parafango posteriore sinistro" cx="108" cy="330" r="42"/><circle class="panel" data-panel="Parafango posteriore destro" cx="612" cy="330" r="42"/>
+          <text x="108" y="87" class="mini">ANT.</text><text x="612" y="87" class="mini">ANT.</text><text x="108" y="335" class="mini">POST.</text><text x="612" y="335" class="mini">POST.</text>
+        </svg>
+      </div>
+      <p id="selectedPanels" class="selected">Pannelli selezionati: nessuno</p>
+      <button id="clearPanels" class="secondary" type="button">Cancella pannelli</button>
+    </section>
 
-<section class="card"><h2>Foto</h2><p class="hint">Consiglio: luce radente, pannello intero e dettaglio ravvicinato.</p><input type="file" id="photos" accept="image/*" multiple><div id="preview" class="preview"></div></section>
-<section class="card"><h2>Cliente</h2><div class="grid"><label>Nome<input id="name" placeholder="Nome cliente"></label><label>Telefono<input id="phone" placeholder="+39..."></label></div><button id="estimateBtn">Genera stima</button><button id="cancelEditBtn" class="secondary hidden">Annulla modifica</button></section>
-<section id="result" class="result hidden"><h2>Risultato</h2><div class="price" id="price"></div><p id="diagnosis"></p><label>Prezzo finale modificabile<input id="finalPrice" type="number" min="0" step="10" placeholder="Prezzo finale"></label><div class="actions"><button id="saveLead">Salva richiesta</button><button id="copyText">Copia testo</button><a id="whatsapp" class="whatsapp" target="_blank">WhatsApp</a></div></section>
-<section class="card"><h2>Archivio richieste</h2><input id="searchLeads" placeholder="Cerca nome, telefono, targa, auto o città..."><div id="leads"></div></section>
-</main><script src="app.js?v=15"></script></body></html>
+    <section class="card ai-card">
+      <div class="section-title-row"><h2>Analisi foto con IA</h2><span id="aiMode" class="mode-chip">IA non collegata</span></div>
+      <p class="hint">Carica almeno 3 foto: una panoramica, una con luce radente e un dettaglio. L’IA prepara una <strong>stima preliminare</strong>; la decisione PDR resta tua.</p>
+      <input id="photos" type="file" accept="image/*" capture="environment" multiple>
+      <div id="preview" class="preview"></div>
+      <div id="photoCheck" class="photo-check hidden"></div>
+      <div class="actions">
+        <button id="analyzeAi" type="button">Analizza foto</button>
+        <button id="applyAi" type="button" class="secondary hidden">Applica stima IA</button>
+      </div>
+      <div id="aiResult" class="ai-result hidden"></div>
+    </section>
+
+    <section class="card">
+      <h2>Danno e listino</h2>
+      <div class="grid">
+        <label>Numero bolli<input id="dents" type="number" min="1" step="1" inputmode="numeric" placeholder="Es. 250"></label>
+        <label>Grandezza media<select id="size"><option value="piccola">Piccola</option><option value="media">Media</option><option value="grande">Grande</option></select></label>
+        <label>Vernice danneggiata?<select id="paint"><option value="no">No / non sembra</option><option value="si">Sì</option></select></label>
+      </div>
+      <div class="listino">1-50: 350€ · 51-200: 550€ · 201-300: 750€ · 301-550: 950€ · oltre 550: 1.150€</div>
+    </section>
+
+    <section class="card">
+      <h2>Cliente</h2>
+      <div class="grid"><label>Nome<input id="name" placeholder="Nome cliente"></label><label>Telefono<input id="phone" placeholder="+39..." inputmode="tel"></label></div>
+      <button id="estimateBtn" type="button">Genera stima</button>
+      <button id="cancelEdit" class="secondary hidden" type="button">Annulla modifica</button>
+    </section>
+
+    <section id="result" class="card hidden">
+      <h2>Risultato</h2>
+      <div id="price" class="price">—</div><p id="diagnosis"></p>
+      <label>Prezzo finale modificabile<input id="finalPrice" type="number" min="0" step="10" inputmode="numeric"></label>
+      <div class="actions"><button id="saveLead" type="button">Salva richiesta</button><button id="copyText" type="button">Copia testo</button><a id="whatsapp" class="whatsapp" target="_blank" rel="noopener">WhatsApp</a></div>
+    </section>
+
+    <section class="card">
+      <h2>Archivio richieste</h2>
+      <input id="search" placeholder="Cerca nome, telefono, targa, auto, città o pannelli...">
+      <div id="leads"></div>
+    </section>
+  </main>
+  <script src="ai-config.js?v=161"></script>
+  <script src="app.js?v=161"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js?v=161', { scope: './' })
+        .catch(function (error) { console.warn('Service worker reset:', error); });
+    }
+  </script>
+</body>
+</html>
