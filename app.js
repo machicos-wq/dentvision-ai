@@ -1,20 +1,41 @@
-// DentVision AI v1.8.2
-// Ogni punto 3D ha la sua scheda e le sue foto, salvate localmente nel browser tramite IndexedDB.
+// DentVision AI v2.0
+// Gestione pratica PDR completa: modello 3D, zone, foto, preventivo, archivio, PDF e backup.
+// Le foto restano in IndexedDB, localmente sul browser di questo telefono.
 (() => {
   "use strict";
 
   const $ = (id) => document.getElementById(id);
-  const STORE = "dentvision_leads";
-  const PHOTO_DB = "dentvision_point_photos";
+
+  const CASES_KEY = "dentvision_v2_cases";
+  const DRAFT_KEY = "dentvision_v2_draft";
+  const PHOTO_DB = "dentvision_v2_point_photos";
   const PHOTO_STORE = "photos";
   const MAX_PHOTOS_PER_POINT = 6;
+
   const viewer = $("car3d");
   const dialog = $("damageDialog");
 
-  let damagePoints = [];
-  let selectedPanels = [];
-  let latestEstimate = null;
-  let editIndex = null;
+  const FORM_IDS = [
+    "clientName", "phone", "email",
+    "carModel", "plate", "city",
+    "status", "priority", "eventDate", "appointment",
+    "insurer", "claimCode", "nextAction",
+    "manualDents", "globalSize", "globalPaint", "difficulty",
+    "caseNotes", "finalPrice"
+  ];
+
+  const STATUS_CLASS = {
+    "Nuova": "nuova",
+    "Sopralluogo": "sopralluogo",
+    "Preventivo inviato": "preventivo",
+    "Approvata": "approvata",
+    "Da fissare": "fissare",
+    "In lavorazione": "lavorazione",
+    "Completata": "completata",
+    "Persa": "persa"
+  };
+
+  let state = freshState();
   let modelReady = false;
   let press = null;
   let editingPointIndex = null;
@@ -22,51 +43,149 @@
   let activePointPhotos = [];
   let previewUrls = [];
   let photoDbPromise = null;
+  let draftTimer = null;
 
-  const esc = (value) => String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  function freshCaseId() {
+    const date = new Date();
+    const ymd = [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, "0"),
+      String(date.getDate()).padStart(2, "0")
+    ].join("");
+    const random = Math.floor(1000 + Math.random() * 9000);
+    return `DV-${ymd}-${random}`;
+  }
 
-  const getLeads = () => {
+  function freshState() {
+    return {
+      id: null,
+      caseId: freshCaseId(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      points: [],
+      lastQuote: null
+    };
+  }
+
+  function esc(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function normalizePoint(point = {}) {
+    return {
+      id: point.id || `p-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      surface: point.surface || "",
+      position: point.position || "",
+      normal: point.normal || "",
+      panel: point.panel || "Da definire",
+      zone: point.zone || "",
+      dents: Math.max(1, Number(point.dents) || 1),
+      size: ["piccola", "media", "grande"].includes(point.size) ? point.size : "piccola",
+      depth: ["lieve", "media", "forte"].includes(point.depth) ? point.depth : "lieve",
+      paint: point.paint === "si" ? "si" : "no",
+      note: String(point.note || ""),
+      photoCount: Math.max(0, Number(point.photoCount) || 0)
+    };
+  }
+
+  function getCases() {
     try {
-      const data = JSON.parse(localStorage.getItem(STORE) || "[]");
-      return Array.isArray(data) ? data : [];
+      const raw = JSON.parse(localStorage.getItem(CASES_KEY) || "[]");
+      return Array.isArray(raw) ? raw : [];
     } catch {
       return [];
     }
-  };
-
-  const putLeads = (leads) => localStorage.setItem(STORE, JSON.stringify(leads));
-
-  const normalizePoint = (point = {}) => ({
-    id: point.id || `old-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    surface: point.surface || "",
-    position: point.position || "",
-    normal: point.normal || "",
-    panel: point.panel || "Da definire",
-    zone: point.zone || "Punto preciso salvato sul modello",
-    dents: Math.max(1, Number(point.dents) || 1),
-    size: ["piccola", "media", "grande"].includes(point.size) ? point.size : "piccola",
-    depth: ["lieve", "media", "forte"].includes(point.depth) ? point.depth : "lieve",
-    paint: point.paint === "si" ? "si" : "no",
-    note: String(point.note || ""),
-    photoCount: Math.max(0, Number(point.photoCount) || 0)
-  });
-
-  function setModelStatus(text, type = "warning") {
-    const badge = $("threeStatus");
-    badge.textContent = text;
-    badge.className = `status-pill ${type}`;
   }
 
-  function totalPointDents() {
-    return damagePoints.reduce((sum, point) => sum + Math.max(1, Number(point.dents) || 1), 0);
+  function putCases(cases) {
+    localStorage.setItem(CASES_KEY, JSON.stringify(cases));
   }
 
-  // ---------- Database foto locale ----------
+  function getForm() {
+    return FORM_IDS.reduce((data, id) => {
+      data[id] = $(id).value;
+      return data;
+    }, {});
+  }
+
+  function applyForm(data = {}) {
+    FORM_IDS.forEach((id) => {
+      if (Object.prototype.hasOwnProperty.call(data, id)) {
+        $(id).value = data[id] ?? "";
+      }
+    });
+
+    if (!data.status) $("status").value = "Nuova";
+    if (!data.priority) $("priority").value = "Normale";
+    if (!data.globalSize) $("globalSize").value = "piccola";
+    if (!data.globalPaint) $("globalPaint").value = "no";
+    if (!data.difficulty) $("difficulty").value = "standard";
+  }
+
+  function restoreDefaults() {
+    applyForm({
+      status: "Nuova",
+      priority: "Normale",
+      globalSize: "piccola",
+      globalPaint: "no",
+      difficulty: "standard"
+    });
+  }
+
+  function updateCaseHeader() {
+    $("caseIdText").textContent = state.caseId;
+    $("dashStatus").textContent = $("status").value || "Nuova";
+  }
+
+  function scheduleDraft() {
+    clearTimeout(draftTimer);
+    $("draftStatus").textContent = "Salvataggio bozza…";
+    draftTimer = setTimeout(saveDraft, 350);
+  }
+
+  function saveDraft() {
+    try {
+      state.updatedAt = new Date().toISOString();
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        ...state,
+        form: getForm()
+      }));
+      $("draftStatus").textContent = `Bozza salvata · ${new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}`;
+    } catch (error) {
+      console.warn(error);
+      $("draftStatus").textContent = "Bozza non salvata";
+    }
+  }
+
+  function restoreDraft() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      if (!raw || !raw.caseId) {
+        restoreDefaults();
+        return;
+      }
+
+      state = {
+        id: raw.id || null,
+        caseId: raw.caseId,
+        createdAt: raw.createdAt || new Date().toISOString(),
+        updatedAt: raw.updatedAt || new Date().toISOString(),
+        points: Array.isArray(raw.points) ? raw.points.map(normalizePoint) : [],
+        lastQuote: raw.lastQuote || null
+      };
+      applyForm(raw.form || {});
+      updateCaseHeader();
+    } catch {
+      restoreDefaults();
+    }
+  }
+
+  // ---------- IndexedDB foto ----------
 
   function openPhotoDb() {
     if (photoDbPromise) return photoDbPromise;
@@ -87,7 +206,6 @@
         } else {
           store = request.transaction.objectStore(PHOTO_STORE);
         }
-
         if (!store.indexNames.contains("pointId")) {
           store.createIndex("pointId", "pointId", { unique: false });
         }
@@ -129,18 +247,14 @@
       const index = transaction.objectStore(PHOTO_STORE).index("pointId");
       const request = index.getAll(pointId);
 
-      request.onsuccess = () => {
-        const photos = (request.result || []).sort((a, b) => a.createdAt - b.createdAt);
-        resolve(photos);
-      };
+      request.onsuccess = () => resolve((request.result || []).sort((a, b) => a.createdAt - b.createdAt));
       request.onerror = () => reject(request.error || new Error("Impossibile leggere le foto."));
     });
   }
 
   async function savePointPhoto(pointId, file) {
-    const photoId = `photo-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const record = {
-      photoId,
+      photoId: `photo-${Date.now()}-${Math.random().toString(16).slice(2)}`,
       pointId,
       blob: file,
       name: file.name || "foto_danno",
@@ -148,7 +262,6 @@
       size: file.size || 0,
       createdAt: Date.now()
     };
-
     await dbAction("readwrite", (store) => store.put(record));
     return record;
   }
@@ -158,20 +271,11 @@
   }
 
   async function removePhotosForPointIds(pointIds) {
-    const ids = [...new Set((pointIds || []).filter(Boolean))];
-    if (!ids.length) return;
-
-    for (const pointId of ids) {
+    const unique = [...new Set((pointIds || []).filter(Boolean))];
+    for (const pointId of unique) {
       const photos = await getPointPhotos(pointId);
-      for (const photo of photos) {
-        await removePointPhoto(photo.photoId);
-      }
+      for (const photo of photos) await removePointPhoto(photo.photoId);
     }
-  }
-
-  function revokePreviewUrls() {
-    previewUrls.forEach(URL.revokeObjectURL);
-    previewUrls = [];
   }
 
   function isImageFile(file) {
@@ -182,36 +286,65 @@
     );
   }
 
-  // ---------- Punti danno ----------
+  function revokePreviewUrls() {
+    previewUrls.forEach(URL.revokeObjectURL);
+    previewUrls = [];
+  }
 
-  function refreshPanelSummary() {
-    selectedPanels = [...new Set(damagePoints.map(point => point.panel).filter(panel => panel && panel !== "Da definire"))];
+  // ---------- Danni 3D ----------
 
-    const count = damagePoints.length;
-    const total = totalPointDents();
+  function totalDents() {
+    return state.points.reduce((sum, point) => sum + Math.max(1, Number(point.dents) || 1), 0);
+  }
 
-    $("pointCount").textContent = `${count} punt${count === 1 ? "o" : "i"} danno segnat${count === 1 ? "o" : "i"} · ${total} boll${total === 1 ? "o" : "i"} indicat${total === 1 ? "o" : "i"}`;
-    $("panelSummary").textContent = `Pannelli: ${selectedPanels.length ? selectedPanels.join(", ") : "da definire"}`;
+  function totalPhotos() {
+    return state.points.reduce((sum, point) => sum + Math.max(0, Number(point.photoCount) || 0), 0);
+  }
 
-    const list = $("damageList");
-    list.innerHTML = "";
+  function selectedPanels() {
+    return [...new Set(state.points.map((point) => point.panel).filter((panel) => panel && panel !== "Da definire"))];
+  }
+
+  function updateDashboard() {
+    updateCaseHeader();
+    $("dashZones").textContent = String(state.points.length);
+    $("dashDents").textContent = String(totalDents());
+    $("dashPhotos").textContent = String(totalPhotos());
+
+    const estimate = calculateEstimate(false);
+    $("dashHours").textContent = estimate.dents ? `${estimate.hours} h` : "—";
+  }
+
+  function refreshDamageUI() {
+    const panels = selectedPanels();
+    const count = state.points.length;
+    const dents = totalDents();
+
+    $("pointCount").textContent = `${count} zon${count === 1 ? "a" : "e"} danno · ${dents} boll${dents === 1 ? "o" : "i"}`;
+    $("panelSummary").textContent = `Pannelli: ${panels.length ? panels.join(", ") : "da definire"}`;
+
+    const holder = $("damageList");
+    holder.innerHTML = "";
 
     if (!count) {
-      list.innerHTML = "<p class='hint'>Nessun punto ancora. Ruota l’auto, fai zoom e tocca la carrozzeria: si aprirà subito la scheda con note, quantità e foto.</p>";
+      holder.innerHTML = "<p class='hint'>Nessuna zona ancora. Tocca l’auto e apri la sua scheda. Un punto deve rappresentare una zona di lavoro, non un singolo bollo.</p>";
+      updateDashboard();
+      scheduleDraft();
       return;
     }
 
-    damagePoints.forEach((point, index) => {
-      const row = document.createElement("div");
-      row.className = "damage-item detail-item";
+    state.points.forEach((point, index) => {
+      const item = document.createElement("div");
+      item.className = "damage-item";
 
-      const paintText = point.paint === "si" ? "Vernice danneggiata" : "Vernice integra";
-      const photoText = `${point.photoCount || 0} fot${Number(point.photoCount || 0) === 1 ? "o" : "o"}`;
+      const paintText = point.paint === "si" ? "vernice danneggiata" : "vernice integra";
+      const zoneText = point.zone ? ` · ${point.zone}` : "";
+      const photoText = `${point.photoCount || 0} foto`;
 
-      row.innerHTML = `
+      item.innerHTML = `
         <div class="damage-copy">
-          <strong>Punto ${index + 1} · ${esc(point.panel)}</strong>
-          <span>${esc(point.dents)} boll${Number(point.dents) === 1 ? "o" : "i"} ${esc(point.size)} · profondità ${esc(point.depth)} · ${paintText}</span>
+          <strong>${index + 1}. ${esc(point.panel)}${esc(zoneText)}</strong>
+          <span>${point.dents} boll${point.dents === 1 ? "o" : "i"} ${esc(point.size)} · profondità ${esc(point.depth)} · ${paintText}</span>
           <span class="photo-count-inline">📷 ${photoText}</span>
           ${point.note ? `<em>Nota: ${esc(point.note)}</em>` : "<em class='missing-note'>Nessuna nota</em>"}
         </div>
@@ -220,20 +353,22 @@
           <button type="button" data-remove-point="${index}" class="danger-mini">Rimuovi</button>
         </div>`;
 
-      list.appendChild(row);
+      holder.appendChild(item);
     });
+
+    updateDashboard();
+    scheduleDraft();
   }
 
-  function clearMarkersOnModel() {
-    viewer.querySelectorAll(".damage-marker").forEach(marker => marker.remove());
+  function clearMarkers() {
+    viewer.querySelectorAll(".damage-marker").forEach((marker) => marker.remove());
   }
 
   function markerTitle(point, number) {
-    const photoNote = point.photoCount ? ` · ${point.photoCount} foto` : "";
-    return `Punto ${number}: ${point.panel} · ${point.dents} bolli ${point.size}${photoNote}${point.note ? ` · ${point.note}` : ""}`;
+    return `Zona ${number}: ${point.panel}${point.zone ? `, ${point.zone}` : ""} · ${point.dents} bolli ${point.size}${point.photoCount ? ` · ${point.photoCount} foto` : ""}`;
   }
 
-  function buildMarker(point, number) {
+  function createMarker(point, number) {
     const marker = document.createElement("button");
     marker.type = "button";
     marker.className = "damage-marker";
@@ -253,52 +388,54 @@
       return;
     }
 
-    marker.addEventListener("pointerdown", event => event.stopPropagation());
-    marker.addEventListener("click", event => {
+    marker.addEventListener("pointerdown", (event) => event.stopPropagation());
+    marker.addEventListener("click", (event) => {
       event.stopPropagation();
-      const index = damagePoints.findIndex(item => item.id === point.id);
-      if (index >= 0) void openPointEditor(index, false);
+      const index = state.points.findIndex((item) => item.id === point.id);
+      if (index >= 0) void openPointDialog(index, false);
     });
 
     viewer.appendChild(marker);
   }
 
   function restoreMarkers() {
-    clearMarkersOnModel();
-    if (modelReady) damagePoints.forEach((point, index) => buildMarker(point, index + 1));
+    clearMarkers();
+    if (!modelReady) return;
+    state.points.forEach((point, index) => createMarker(point, index + 1));
   }
 
-  function addDamagePoint(hit) {
-    const point = normalizePoint({
+  function addPoint(hit) {
+    state.points.push(normalizePoint({
       id: `p-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      surface: hit.surface,
-      position: hit.position,
-      normal: hit.normal,
+      surface: hit.surface || "",
+      position: hit.position || "",
+      normal: hit.normal || "",
       panel: "Da definire",
-      zone: "Punto preciso segnato sul modello",
+      zone: "",
       dents: 1,
       size: "piccola",
       depth: "lieve",
       paint: "no",
       note: "",
       photoCount: 0
-    });
-
-    damagePoints.push(point);
+    }));
     restoreMarkers();
-    refreshPanelSummary();
-    void openPointEditor(damagePoints.length - 1, true);
+    refreshDamageUI();
+    void openPointDialog(state.points.length - 1, true);
   }
 
-  async function openPointEditor(index, isNew) {
-    const point = damagePoints[index];
+  // ---------- Dialog punto + foto ----------
+
+  async function openPointDialog(index, isNew) {
+    const point = state.points[index];
     if (!point) return;
 
     editingPointIndex = index;
     creatingPointIndex = isNew ? index : null;
 
-    $("damageDialogTitle").textContent = `Punto ${index + 1} · dettagli danno`;
+    $("damageDialogTitle").textContent = `Zona ${index + 1} · dettagli`;
     $("pointPanel").value = point.panel || "Da definire";
+    $("pointZone").value = point.zone || "";
     $("pointDents").value = Math.max(1, Number(point.dents) || 1);
     $("pointSize").value = point.size || "piccola";
     $("pointDepth").value = point.depth || "lieve";
@@ -314,23 +451,22 @@
     await loadPointPhotos(point.id);
   }
 
-  async function closePointEditor(discardNew = false) {
-    const removedPoint = discardNew && creatingPointIndex !== null ? damagePoints[creatingPointIndex] : null;
+  async function closePointDialog(discardNew = false) {
+    const pointToDelete = discardNew && creatingPointIndex !== null ? state.points[creatingPointIndex] : null;
 
-    if (removedPoint) {
-      damagePoints.splice(creatingPointIndex, 1);
-      await removePhotosForPointIds([removedPoint.id]);
+    if (pointToDelete) {
+      state.points.splice(creatingPointIndex, 1);
+      await removePhotosForPointIds([pointToDelete.id]);
       restoreMarkers();
-      refreshPanelSummary();
+      refreshDamageUI();
     }
 
     revokePreviewUrls();
     activePointPhotos = [];
     $("pointPhotoPreview").innerHTML = "";
-    $("pointPhotoHint").textContent = "Nessuna foto collegata a questo punto.";
+    $("pointPhotoHint").textContent = "Nessuna foto collegata.";
     $("pointPhotoBadge").textContent = "0 foto";
     $("pointPhotoCheck").className = "photo-check hidden";
-
     editingPointIndex = null;
     creatingPointIndex = null;
 
@@ -338,27 +474,25 @@
     else dialog.removeAttribute("open");
   }
 
-  function savePointEditor() {
-    if (editingPointIndex === null || !damagePoints[editingPointIndex]) return;
+  function savePointDialog() {
+    if (editingPointIndex === null || !state.points[editingPointIndex]) return;
 
-    const point = damagePoints[editingPointIndex];
+    const point = state.points[editingPointIndex];
     point.panel = $("pointPanel").value;
+    point.zone = $("pointZone").value.trim().slice(0, 120);
     point.dents = Math.max(1, Math.round(Number($("pointDents").value) || 1));
     point.size = $("pointSize").value;
     point.depth = $("pointDepth").value;
     point.paint = $("pointPaint").value;
-    point.note = $("pointNote").value.trim().slice(0, 500);
-    point.zone = `${point.panel} · ${point.dents} boll${point.dents === 1 ? "o" : "i"} ${point.size}`;
+    point.note = $("pointNote").value.trim().slice(0, 600);
 
     restoreMarkers();
-    refreshPanelSummary();
-    void closePointEditor(false);
+    refreshDamageUI();
+    void closePointDialog(false);
   }
 
-  // ---------- Foto per singolo punto ----------
-
-  function getEditingPoint() {
-    return editingPointIndex === null ? null : damagePoints[editingPointIndex] || null;
+  function editingPoint() {
+    return editingPointIndex === null ? null : state.points[editingPointIndex] || null;
   }
 
   async function loadPointPhotos(pointId) {
@@ -369,16 +503,15 @@
 
     try {
       const photos = await getPointPhotos(pointId);
-      const point = damagePoints.find(item => item.id === pointId);
+      const point = state.points.find((item) => item.id === pointId);
       if (point) point.photoCount = photos.length;
 
-      // If the user opened another point before the database returned, do not paint the wrong photos.
-      if (getEditingPoint()?.id !== pointId) return;
+      if (editingPoint()?.id !== pointId) return;
 
       activePointPhotos = photos;
       renderPointPhotos();
-      refreshPanelSummary();
       restoreMarkers();
+      refreshDamageUI();
     } catch (error) {
       console.warn(error);
       activePointPhotos = [];
@@ -393,9 +526,7 @@
     holder.innerHTML = "";
 
     const count = activePointPhotos.length;
-    $("pointPhotoHint").textContent = count
-      ? `${count} foto collegata${count === 1 ? "" : "e"} a questo danno.`
-      : "Nessuna foto collegata a questo punto.";
+    $("pointPhotoHint").textContent = count ? `${count} foto collegata${count === 1 ? "" : "e"} a questa zona.` : "Nessuna foto collegata.";
     $("pointPhotoBadge").textContent = `${count} foto`;
 
     activePointPhotos.forEach((photo, index) => {
@@ -406,7 +537,7 @@
       const url = URL.createObjectURL(photo.blob);
       previewUrls.push(url);
       image.src = url;
-      image.alt = `Foto del danno ${index + 1}`;
+      image.alt = `Foto zona ${index + 1}`;
 
       const remove = document.createElement("button");
       remove.type = "button";
@@ -421,9 +552,9 @@
   }
 
   async function addPointPhotos(fileList) {
-    const point = getEditingPoint();
+    const point = editingPoint();
     if (!point) {
-      alert("Apri prima la scheda di un punto danno.");
+      alert("Apri prima una zona danno.");
       return;
     }
 
@@ -435,23 +566,15 @@
 
     const available = Math.max(0, MAX_PHOTOS_PER_POINT - activePointPhotos.length);
     if (!available) {
-      alert(`Puoi collegare al massimo ${MAX_PHOTOS_PER_POINT} foto a questo punto.`);
+      alert(`Limite raggiunto: massimo ${MAX_PHOTOS_PER_POINT} foto per zona.`);
       return;
     }
 
-    const toSave = files.slice(0, available);
-    let saved = 0;
+    const selected = files.slice(0, available);
 
     try {
-      for (const file of toSave) {
-        await savePointPhoto(point.id, file);
-        saved++;
-      }
-
-      if (files.length > toSave.length) {
-        alert(`Sono state aggiunte ${saved} foto. Il limite per punto è ${MAX_PHOTOS_PER_POINT}.`);
-      }
-
+      for (const file of selected) await savePointPhoto(point.id, file);
+      if (files.length > selected.length) alert(`Aggiunte ${selected.length} foto. Il limite per zona è ${MAX_PHOTOS_PER_POINT}.`);
       await loadPointPhotos(point.id);
       $("pointPhotoCheck").className = "photo-check hidden";
     } catch (error) {
@@ -460,20 +583,18 @@
     }
   }
 
-  async function removePhotoFromPoint(photoId) {
-    const point = getEditingPoint();
+  async function removeCurrentPointPhoto(photoId) {
+    const point = editingPoint();
     if (!point) return;
-
     await removePointPhoto(photoId);
     await loadPointPhotos(point.id);
     $("pointPhotoCheck").className = "photo-check hidden";
   }
 
-  async function clearPhotosFromPoint() {
-    const point = getEditingPoint();
+  async function clearCurrentPointPhotos() {
+    const point = editingPoint();
     if (!point || !activePointPhotos.length) return;
-
-    if (!confirm(`Vuoi cancellare tutte le ${activePointPhotos.length} foto di questo danno?`)) return;
+    if (!confirm(`Cancellare tutte le ${activePointPhotos.length} foto di questa zona?`)) return;
 
     await removePhotosForPointIds([point.id]);
     await loadPointPhotos(point.id);
@@ -496,10 +617,10 @@
     });
   }
 
-  async function checkPointPhotos() {
+  async function checkCurrentPointPhotos() {
     const photos = activePointPhotos.slice(0, MAX_PHOTOS_PER_POINT);
     if (!photos.length) {
-      alert("Prima aggiungi almeno una foto a questo danno.");
+      alert("Prima aggiungi almeno una foto.");
       return;
     }
 
@@ -509,6 +630,7 @@
     for (const photo of photos) {
       try {
         const image = await imageFromBlob(photo.blob);
+
         if (image.naturalWidth < 900 || image.naturalHeight < 600) low++;
 
         const canvas = document.createElement("canvas");
@@ -516,23 +638,22 @@
         const height = Math.max(1, Math.round(image.naturalHeight * width / image.naturalWidth));
         canvas.width = width;
         canvas.height = height;
-
         const context = canvas.getContext("2d", { willReadFrequently: true });
         context.drawImage(image, 0, 0, width, height);
 
-        const pixels = context.getImageData(0, 0, width, height).data;
+        const data = context.getImageData(0, 0, width, height).data;
         let sum = 0;
         let sumSq = 0;
 
-        for (let i = 0; i < pixels.length; i += 4) {
-          const brightness = .2126 * pixels[i] + .7152 * pixels[i + 1] + .0722 * pixels[i + 2];
+        for (let i = 0; i < data.length; i += 4) {
+          const brightness = .2126 * data[i] + .7152 * data[i + 1] + .0722 * data[i + 2];
           sum += brightness;
           sumSq += brightness * brightness;
         }
 
-        const count = pixels.length / 4;
-        const mean = sum / count;
-        const contrast = Math.sqrt(Math.max(0, sumSq / count - mean * mean));
+        const total = data.length / 4;
+        const mean = sum / total;
+        const contrast = Math.sqrt(Math.max(0, sumSq / total - mean * mean));
 
         if (mean < 55 || mean > 205 || contrast < 20) weak++;
       } catch {
@@ -548,10 +669,16 @@
 
     const box = $("pointPhotoCheck");
     box.className = `photo-check ${score >= 70 ? "good" : "warning"}`;
-    box.innerHTML = `<strong>Controllo foto zona: ${score}/100</strong><br><span class="small">${issues.length ? issues.join(" · ") : "Qualità tecnica buona per questa zona danno."}</span>`;
+    box.innerHTML = `<strong>Controllo foto zona: ${score}/100</strong><br><span class="small">${issues.length ? issues.join(" · ") : "Qualità tecnica buona per questa zona."}</span>`;
   }
 
-  // ---------- Modello 3D ----------
+  // ---------- Motore 3D ----------
+
+  function setModelStatus(text, type = "warning") {
+    const badge = $("threeStatus");
+    badge.textContent = text;
+    badge.className = `status-pill ${type}`;
+  }
 
   async function activateModel() {
     try {
@@ -566,7 +693,7 @@
 
       viewer.addEventListener("error", () => {
         setModelStatus("Modello non caricato", "fail");
-        $("modelFallback").textContent = "Il modello 3D non si è caricato. Riapri la pagina con internet attivo.";
+        $("modelFallback").textContent = "Il modello 3D non si è caricato. Riapri con internet attivo.";
       });
 
       if (viewer.loaded) {
@@ -577,7 +704,7 @@
       }
     } catch {
       setModelStatus("Motore 3D non disponibile", "fail");
-      $("modelFallback").textContent = "Il motore 3D non è disponibile. Controlla la connessione e riapri la pagina.";
+      $("modelFallback").textContent = "Il motore 3D non è disponibile. Controlla la connessione e riapri.";
     }
   }
 
@@ -586,23 +713,19 @@
     setModelStatus("Motore 3D non disponibile", "fail");
     $("modelFallback").textContent = "Il motore 3D non si è caricato. Controlla la connessione e riapri.";
   });
-
   if (customElements.get("model-viewer")) activateModel();
 
   setTimeout(() => {
-    if (!modelReady && !customElements.get("model-viewer")) {
-      setModelStatus("Motore 3D in attesa", "warning");
-    }
+    if (!modelReady && !customElements.get("model-viewer")) setModelStatus("Motore 3D in attesa", "warning");
   }, 9000);
 
-  viewer.addEventListener("pointerdown", event => {
+  viewer.addEventListener("pointerdown", (event) => {
     if (event.target.closest?.(".damage-marker")) return;
     press = { x: event.clientX, y: event.clientY, time: performance.now() };
   }, { passive: true });
 
-  viewer.addEventListener("pointerup", event => {
+  viewer.addEventListener("pointerup", (event) => {
     if (!press || !modelReady) return;
-
     const moved = Math.hypot(event.clientX - press.x, event.clientY - press.y);
     const duration = performance.now() - press.time;
     press = null;
@@ -612,10 +735,9 @@
     try {
       const picked = viewer.positionAndNormalFromPoint?.(event.clientX, event.clientY);
       const surface = viewer.surfaceFromPoint?.(event.clientX, event.clientY);
-
       if (!picked && !surface) return;
 
-      addDamagePoint({
+      addPoint({
         surface: surface ? String(surface) : "",
         position: picked?.position?.toString?.() || "",
         normal: picked?.normal?.toString?.() || ""
@@ -625,7 +747,7 @@
     }
   }, { passive: true });
 
-  const cameraViews = {
+  const CAMERA_VIEWS = {
     front: "0deg 76deg 105%",
     rear: "180deg 76deg 105%",
     left: "-90deg 76deg 105%",
@@ -634,13 +756,13 @@
     reset: "-35deg 68deg 105%"
   };
 
-  document.querySelectorAll("[data-view]").forEach(button => {
+  document.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
-      if (modelReady) viewer.cameraOrbit = cameraViews[button.dataset.view] || cameraViews.reset;
+      if (modelReady) viewer.cameraOrbit = CAMERA_VIEWS[button.dataset.view] || CAMERA_VIEWS.reset;
     });
   });
 
-  // ---------- Preventivo e archivio ----------
+  // ---------- Preventivo ----------
 
   function basePrice(dents) {
     if (dents <= 50) return 350;
@@ -650,320 +772,686 @@
     return 1150;
   }
 
-  function makeEstimate() {
-    const typed = Math.round(Number($("dents").value) || 0);
-    const dents = Math.max(1, typed || totalPointDents() || 1);
-    let price = basePrice(dents);
-    const notes = [];
+  function calculateEstimate(allowFallback = true) {
+    const zoneDents = totalDents();
+    const manual = Math.max(0, Number($("manualDents").value) || 0);
+    const dents = zoneDents > 0 ? zoneDents : manual;
 
-    if (selectedPanels.length === 2) {
-      price *= 1.15;
-      notes.push("2 pannelli: +15%");
-    } else if (selectedPanels.length === 3) {
-      price *= 1.25;
-      notes.push("3 pannelli: +25%");
-    } else if (selectedPanels.length >= 4) {
-      price *= 1.40;
-      notes.push("4+ pannelli: +40%");
+    if (!dents && !allowFallback) {
+      return { dents: 0, base: 0, suggested: 0, hours: 0, modifiers: [], paintFlag: false };
     }
 
-    if (selectedPanels.includes("Tetto")) {
-      price *= 1.15;
-      notes.push("Tetto: +15%");
+    const usedDents = Math.max(1, dents || 1);
+    let price = basePrice(usedDents);
+    let complexity = 0;
+    const modifiers = [];
+    const panels = selectedPanels();
+    const points = state.points;
+
+    if (panels.length === 2) {
+      price *= 1.15; complexity += .25; modifiers.push("2 pannelli +15%");
+    } else if (panels.length === 3) {
+      price *= 1.25; complexity += .5; modifiers.push("3 pannelli +25%");
+    } else if (panels.length >= 4) {
+      price *= 1.40; complexity += .8; modifiers.push("4+ pannelli +40%");
     }
 
-    if (selectedPanels.includes("Fiancata sinistra") || selectedPanels.includes("Fiancata destra")) {
-      price *= 1.10;
-      notes.push("Fiancata: +10%");
+    if (panels.includes("Tetto")) {
+      price *= 1.15; complexity += .35; modifiers.push("Tetto +15%");
     }
 
-    if ($("size").value === "media") {
-      price *= 1.10;
-      notes.push("Bolli medi: +10%");
+    if (panels.includes("Fiancata sinistra") || panels.includes("Fiancata destra")) {
+      price *= 1.10; complexity += .25; modifiers.push("Fiancata +10%");
     }
 
-    if ($("size").value === "grande") {
-      price *= 1.25;
-      notes.push("Bolli grandi: +25%");
+    const hasLarge = points.some((point) => point.size === "grande") || (!points.length && $("globalSize").value === "grande");
+    const hasMedium = points.some((point) => point.size === "media") || (!points.length && $("globalSize").value === "media");
+    if (hasLarge) {
+      price *= 1.25; complexity += .5; modifiers.push("Bolli grandi +25%");
+    } else if (hasMedium) {
+      price *= 1.10; complexity += .2; modifiers.push("Bolli medi +10%");
     }
 
-    if ($("paint").value === "si") {
-      notes.push("Vernice danneggiata: valutare carrozzeria");
+    const strongDepth = points.some((point) => point.depth === "forte");
+    const mediumDepth = points.some((point) => point.depth === "media");
+    if (strongDepth) {
+      price *= 1.12; complexity += .6; modifiers.push("Profondità forte +12%");
+    } else if (mediumDepth) {
+      price *= 1.05; complexity += .25; modifiers.push("Profondità media +5%");
     }
 
-    const severity = dents > 550 ? "molto importante" : dents > 200 ? "importante" : dents > 50 ? "medio" : "lieve";
-    return { dents, price: Math.round(price / 10) * 10, severity, notes };
+    const difficulty = $("difficulty").value;
+    if (difficulty === "difficile") {
+      price *= 1.15; complexity += .5; modifiers.push("Difficoltà generale +15%");
+    } else if (difficulty === "molto_difficile") {
+      price *= 1.30; complexity += 1; modifiers.push("Difficoltà generale +30%");
+    }
+
+    const paintFlag = points.some((point) => point.paint === "si") || $("globalPaint").value === "si";
+    if (paintFlag) modifiers.push("Vernice da valutare a parte");
+
+    const hours = Math.max(.5, Math.round((usedDents / 35 + points.length * .22 + complexity) * 2) / 2);
+    return {
+      dents: usedDents,
+      base: basePrice(usedDents),
+      suggested: Math.round(price / 10) * 10,
+      hours,
+      modifiers,
+      paintFlag
+    };
   }
 
-  function pointDetailsText(points = []) {
-    if (!points.length) return "Nessun punto 3D dettagliato.";
+  function renderQuote(force = false) {
+    const estimate = calculateEstimate();
+    if (!force && !estimate.dents) return estimate;
 
-    return points.map((point, index) => {
-      const p = normalizePoint(point);
-      const photoText = `${p.photoCount} fot${p.photoCount === 1 ? "o" : "o"}`;
-      return `${index + 1}. ${p.panel}: ${p.dents} boll${p.dents === 1 ? "o" : "i"} ${p.size}, profondità ${p.depth}, vernice ${p.paint === "si" ? "danneggiata" : "integra"}, ${photoText}${p.note ? `, nota: ${p.note}` : ""}`;
-    }).join("\n");
+    state.lastQuote = estimate;
+    $("quoteBox").classList.remove("hidden");
+    $("suggestedPrice").textContent = `${estimate.suggested}€`;
+    $("estimatedHours").textContent = `${estimate.hours} h`;
+    $("quoteDents").textContent = String(estimate.dents);
+
+    const breakdown = $("quoteBreakdown");
+    breakdown.innerHTML = "";
+    [`Base ${estimate.base}€`, ...estimate.modifiers].forEach((text) => {
+      const chip = document.createElement("span");
+      chip.textContent = text;
+      breakdown.appendChild(chip);
+    });
+
+    if (!$("finalPrice").value || force) $("finalPrice").value = estimate.suggested;
+    updateDashboard();
+    scheduleDraft();
+    return estimate;
   }
 
-  function buildMessage(data) {
-    return `DentVision AI - Nuova richiesta
-Cliente: ${data.name}
-Telefono: ${data.phone}
-Auto: ${data.carModel}
-Targa/Rif.: ${data.plate}
-Città: ${data.city}
-Punti danno 3D: ${data.damagePoints.length}
-Dettaglio punti:
-${pointDetailsText(data.damagePoints)}
-Numero bolli totale: ${data.dents}
-Grandezza media: ${data.size}
-Vernice danneggiata: ${data.paint}
-Prezzo suggerito: ${data.suggestedPrice}€
-Prezzo finale: ${data.finalPrice}€
-Gravità: ${data.severity}
-Note preventivo: ${data.notes}`;
+  function currentFinalPrice() {
+    const estimate = state.lastQuote || calculateEstimate();
+    const value = Number($("finalPrice").value);
+    return Number.isFinite(value) && value >= 0 ? value : estimate.suggested;
   }
 
-  function renderLeads() {
+  // ---------- Pratica, archivio e testo ----------
+
+  function pointText(point, index) {
+    const p = normalizePoint(point);
+    return `${index + 1}. ${p.panel}${p.zone ? ` (${p.zone})` : ""}: ${p.dents} boll${p.dents === 1 ? "o" : "i"} ${p.size}, profondità ${p.depth}, vernice ${p.paint === "si" ? "danneggiata" : "integra"}, ${p.photoCount} foto${p.note ? `, nota: ${p.note}` : ""}`;
+  }
+
+  function makeCaseObject() {
+    const estimate = state.lastQuote || calculateEstimate();
+    const form = getForm();
+    const now = new Date().toISOString();
+
+    return {
+      id: state.id || `case-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      caseId: state.caseId,
+      createdAt: state.createdAt || now,
+      updatedAt: now,
+      form,
+      points: state.points.map((point) => ({ ...point })),
+      quote: {
+        ...estimate,
+        finalPrice: currentFinalPrice()
+      }
+    };
+  }
+
+  function summaryText(caseData = makeCaseObject()) {
+    const form = caseData.form || {};
+    const quote = caseData.quote || {};
+    const points = caseData.points || [];
+
+    return `DentVision AI · ${caseData.caseId}
+Stato: ${form.status || "Nuova"} · Priorità: ${form.priority || "Normale"}
+
+CLIENTE
+${form.clientName || "Cliente non indicato"}
+Tel: ${form.phone || "N/D"}${form.email ? ` · Email: ${form.email}` : ""}
+
+VEICOLO
+${form.carModel || "Auto non indicata"} · ${form.plate || "Targa N/D"}
+Città: ${form.city || "N/D"}
+Evento: ${form.eventDate || "N/D"}${form.insurer ? ` · Assicurazione: ${form.insurer}` : ""}${form.claimCode ? ` · Sinistro: ${form.claimCode}` : ""}
+
+ZONE DANNO (${points.length})
+${points.length ? points.map(pointText).join("\n") : "Nessuna zona registrata"}
+
+PREVENTIVO
+Bolli usati: ${quote.dents || 0}
+Prezzo suggerito: ${quote.suggested || 0}€
+Prezzo finale: ${quote.finalPrice || quote.suggested || 0}€
+Tempo indicativo: ${quote.hours || "—"} h
+${quote.paintFlag ? "Vernice: da valutare a parte\n" : ""}${(quote.modifiers || []).length ? `Modifiche: ${(quote.modifiers || []).join(", ")}\n` : ""}
+
+PROSSIMA AZIONE
+${form.nextAction || "Nessuna"}
+
+NOTE
+${form.caseNotes || "Nessuna"}`;
+  }
+
+  function statusChip(status) {
+    const cls = STATUS_CLASS[status] || "nuova";
+    return `<span class="status-chip ${cls}">${esc(status || "Nuova")}</span>`;
+  }
+
+  function renderArchive() {
     const query = $("search").value.trim().toLowerCase();
+    const status = $("statusFilter").value;
     const holder = $("leads");
     holder.innerHTML = "";
 
-    const matches = getLeads()
-      .map((lead, index) => ({ lead, index }))
-      .filter(({ lead }) => [
-        lead.name,
-        lead.phone,
-        lead.plate,
-        lead.carModel,
-        lead.city,
-        lead.panels,
-        pointDetailsText(lead.damagePoints || [])
-      ].join(" ").toLowerCase().includes(query));
+    const cases = getCases().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    $("archiveCount").textContent = `${cases.length} pratic${cases.length === 1 ? "a" : "he"}`;
 
-    if (!matches.length) {
-      holder.innerHTML = "<p class='hint'>Nessuna richiesta trovata.</p>";
+    const filtered = cases.filter((caseData) => {
+      const form = caseData.form || {};
+      const text = [
+        caseData.caseId,
+        form.clientName,
+        form.phone,
+        form.email,
+        form.carModel,
+        form.plate,
+        form.city,
+        form.status,
+        form.nextAction,
+        form.caseNotes,
+        ...(caseData.points || []).map((point) => `${point.panel} ${point.zone} ${point.note}`)
+      ].join(" ").toLowerCase();
+
+      return (!query || text.includes(query)) && (!status || form.status === status);
+    });
+
+    if (!filtered.length) {
+      holder.innerHTML = "<p class='hint'>Nessuna pratica trovata.</p>";
       return;
     }
 
-    matches.forEach(({ lead, index }) => {
-      const photoTotal = (lead.damagePoints || []).reduce((sum, point) => sum + Math.max(0, Number(point.photoCount) || 0), 0);
-      const row = document.createElement("div");
-      row.className = "lead";
-      row.innerHTML = `<strong>${esc(lead.name)}</strong> · ${esc(lead.carModel)}<br>
-        ${esc(lead.city)} · ${esc(lead.estimate)} · ${esc(lead.date)}<br>
-        <span class="small">Tel: ${esc(lead.phone)} · Targa/Rif.: ${esc(lead.plate)} · Bolli: ${esc(lead.dents)} · Punti 3D: ${(lead.damagePoints || []).length} · Foto zona: ${photoTotal}</span>
+    filtered.forEach((caseData) => {
+      const form = caseData.form || {};
+      const quote = caseData.quote || {};
+      const photoCount = (caseData.points || []).reduce((sum, point) => sum + (Number(point.photoCount) || 0), 0);
+      const updated = caseData.updatedAt ? new Date(caseData.updatedAt).toLocaleString("it-IT") : "N/D";
+
+      const item = document.createElement("article");
+      item.className = "lead";
+      item.innerHTML = `
+        <div class="lead-head">
+          <div>
+            <strong>${esc(form.clientName || "Cliente non indicato")}</strong> · ${esc(form.carModel || "Auto non indicata")}
+            <div class="lead-meta">${esc(caseData.caseId)} · ${esc(form.city || "Città N/D")} · ${esc(form.plate || "Targa N/D")}</div>
+          </div>
+          ${statusChip(form.status)}
+        </div>
+        <div class="lead-meta">
+          ${caseData.points?.length || 0} zone · ${quote.dents || 0} bolli · 📷 ${photoCount} foto · Prezzo: ${quote.finalPrice || quote.suggested || "—"}€<br>
+          Priorità: ${esc(form.priority || "Normale")} · Aggiornata: ${esc(updated)}${form.nextAction ? `<br>Prossima azione: ${esc(form.nextAction)}` : ""}
+        </div>
         <div class="lead-actions">
-          <button type="button" data-edit="${index}">Modifica</button>
-          <button type="button" class="danger" data-delete="${index}">Elimina</button>
-          <a class="whatsapp" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(buildMessage(lead))}">WhatsApp</a>
+          <button type="button" data-open-case="${esc(caseData.id)}">Apri</button>
+          <button type="button" data-case-wa="${esc(caseData.id)}" class="whatsapp">WhatsApp</button>
+          <button type="button" data-case-print="${esc(caseData.id)}" class="secondary">PDF</button>
+          <button type="button" data-delete-case="${esc(caseData.id)}" class="danger">Elimina</button>
         </div>`;
-      holder.appendChild(row);
+
+      holder.appendChild(item);
     });
   }
 
-  function resetForm() {
-    ["carModel", "plate", "city", "dents", "name", "phone", "finalPrice"].forEach(id => $(id).value = "");
-    $("size").value = "piccola";
-    $("paint").value = "no";
-    $("result").classList.add("hidden");
-    $("cancelEdit").classList.add("hidden");
-    $("saveLead").textContent = "Salva richiesta";
+  async function saveCurrentCase() {
+    const form = getForm();
 
-    damagePoints = [];
-    selectedPanels = [];
-    restoreMarkers();
-    refreshPanelSummary();
+    if (!form.clientName.trim()) {
+      alert("Scrivi almeno il nome del cliente.");
+      $("clientName").focus();
+      return null;
+    }
+    if (!form.carModel.trim()) {
+      alert("Scrivi almeno marca e modello dell'auto.");
+      $("carModel").focus();
+      return null;
+    }
 
-    latestEstimate = null;
-    editIndex = null;
-    void closePointEditor(false);
+    const data = makeCaseObject();
+    const cases = getCases();
+    const index = cases.findIndex((item) => item.id === data.id);
+
+    if (index >= 0) cases[index] = data;
+    else cases.unshift(data);
+
+    putCases(cases);
+    state.id = data.id;
+    state.createdAt = data.createdAt;
+    state.updatedAt = data.updatedAt;
+    saveDraft();
+    renderArchive();
+    alert(index >= 0 ? "Pratica aggiornata." : "Pratica salvata.");
+    return data;
   }
 
-  function loadEdit(index) {
-    const lead = getLeads()[index];
-    if (!lead) return;
+  function openCase(id) {
+    const caseData = getCases().find((item) => item.id === id);
+    if (!caseData) return;
 
-    editIndex = index;
-    $("carModel").value = lead.carModel === "Auto non specificata" ? "" : lead.carModel;
-    $("plate").value = lead.plate === "N/D" ? "" : lead.plate;
-    $("city").value = lead.city === "Città non specificata" ? "" : lead.city;
-    $("dents").value = lead.dentsValue || lead.dents || "";
-    $("size").value = lead.size || "piccola";
-    $("paint").value = lead.paint || "no";
-    $("name").value = lead.name === "Cliente" ? "" : lead.name;
-    $("phone").value = lead.phone === "N/D" ? "" : lead.phone;
+    state = {
+      id: caseData.id,
+      caseId: caseData.caseId || freshCaseId(),
+      createdAt: caseData.createdAt || new Date().toISOString(),
+      updatedAt: caseData.updatedAt || new Date().toISOString(),
+      points: Array.isArray(caseData.points) ? caseData.points.map(normalizePoint) : [],
+      lastQuote: caseData.quote || null
+    };
 
-    damagePoints = Array.isArray(lead.damagePoints) ? lead.damagePoints.map(normalizePoint) : [];
+    applyForm(caseData.form || {});
+    updateCaseHeader();
     restoreMarkers();
-    refreshPanelSummary();
-    $("cancelEdit").classList.remove("hidden");
-    $("estimateBtn").scrollIntoView({ behavior: "smooth", block: "center" });
+    refreshDamageUI();
+
+    if (state.lastQuote) {
+      $("quoteBox").classList.remove("hidden");
+      $("suggestedPrice").textContent = `${state.lastQuote.suggested || 0}€`;
+      $("estimatedHours").textContent = `${state.lastQuote.hours || "—"} h`;
+      $("quoteDents").textContent = String(state.lastQuote.dents || 0);
+      $("finalPrice").value = state.lastQuote.finalPrice ?? state.lastQuote.suggested ?? "";
+      const breakdown = $("quoteBreakdown");
+      breakdown.innerHTML = "";
+      [`Base ${state.lastQuote.base || 0}€`, ...(state.lastQuote.modifiers || [])].forEach((text) => {
+        const chip = document.createElement("span");
+        chip.textContent = text;
+        breakdown.appendChild(chip);
+      });
+    } else {
+      $("quoteBox").classList.add("hidden");
+    }
+
+    saveDraft();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function newCase() {
+    const currentPoints = [...state.points];
+
+    if (!confirm("Vuoi iniziare una nuova pratica? La bozza attuale non salvata verrà eliminata.")) return;
+
+    if (!state.id && currentPoints.length) {
+      await removePhotosForPointIds(currentPoints.map((point) => point.id));
+    }
+
+    state = freshState();
+    FORM_IDS.forEach((id) => { $(id).value = ""; });
+    restoreDefaults();
+    $("quoteBox").classList.add("hidden");
+    updateCaseHeader();
+    restoreMarkers();
+    refreshDamageUI();
+    saveDraft();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // ---------- PDF e condivisione ----------
+
+  function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error || new Error("Errore conversione foto"));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function prepareReportPhotos(points) {
+    const result = [];
+
+    for (const point of points || []) {
+      try {
+        const photos = await getPointPhotos(point.id);
+        const images = [];
+        for (const photo of photos.slice(0, MAX_PHOTOS_PER_POINT)) {
+          try {
+            images.push(await blobToDataUrl(photo.blob));
+          } catch {
+            // skip damaged image
+          }
+        }
+        result.push({ pointId: point.id, images });
+      } catch {
+        result.push({ pointId: point.id, images: [] });
+      }
+    }
+
+    return result;
+  }
+
+  function reportHtml(caseData, photosByPoint) {
+    const form = caseData.form || {};
+    const quote = caseData.quote || {};
+    const photoMap = new Map(photosByPoint.map((item) => [item.pointId, item.images || []]));
+    const date = new Date(caseData.updatedAt || Date.now()).toLocaleString("it-IT");
+
+    const zones = (caseData.points || []).map((point, index) => {
+      const images = photoMap.get(point.id) || [];
+      return `<section class="zone">
+        <h3>${index + 1}. ${esc(point.panel)}${point.zone ? ` · ${esc(point.zone)}` : ""}</h3>
+        <p><b>${point.dents} boll${point.dents === 1 ? "o" : "i"}</b> · ${esc(point.size)} · profondità ${esc(point.depth)} · vernice ${point.paint === "si" ? "da valutare" : "integra"} · ${point.photoCount || 0} foto</p>
+        ${point.note ? `<p class="note"><b>Nota:</b> ${esc(point.note)}</p>` : ""}
+        ${images.length ? `<div class="photos">${images.map((image, n) => `<img src="${image}" alt="Foto zona ${index + 1}-${n + 1}">`).join("")}</div>` : ""}
+      </section>`;
+    }).join("") || "<p>Nessuna zona danno registrata.</p>";
+
+    return `<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><title>Report ${esc(caseData.caseId)}</title>
+<style>
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#142033;margin:0;background:#f4f7fb}.page{max-width:900px;margin:0 auto;background:#fff;padding:34px}.head{display:flex;justify-content:space-between;gap:20px;border-bottom:3px solid #139be2;padding-bottom:18px}.brand{color:#139be2;font-weight:800;letter-spacing:.08em}.title{font-size:30px;margin:8px 0}.muted{color:#52657a;line-height:1.4}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:22px 0}.box{border:1px solid #d8e1ec;border-radius:12px;padding:14px;background:#fbfdff}.box b{display:block;color:#52657a;font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}.quote{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}.quote .box strong{font-size:25px;color:#0d7ebd}.zone{border:1px solid #d8e1ec;border-radius:14px;padding:15px;margin:13px 0;break-inside:avoid}.zone h3{margin:0 0 8px;font-size:18px}.zone p{line-height:1.45;margin:7px 0}.note{background:#f5f9fd;padding:9px;border-radius:8px}.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.photos img{width:100%;height:150px;object-fit:cover;border-radius:8px;border:1px solid #d8e1ec}@media print{body{background:#fff}.page{max-width:none;padding:0}.no-print{display:none}}@media(max-width:600px){.grid,.quote{grid-template-columns:1fr}.photos{grid-template-columns:repeat(2,1fr)}}
+</style></head>
+<body><main class="page">
+<div class="head"><div><div class="brand">DENTVISION AI · REPORT PDR</div><h1 class="title">Stima danni grandine</h1><div class="muted">Pratica ${esc(caseData.caseId)} · aggiornato ${esc(date)}</div></div><div class="muted">${statusChip(form.status).replace(/<[^>]+>/g, "")}<br>Priorità: ${esc(form.priority || "Normale")}</div></div>
+<div class="grid">
+<div class="box"><b>Cliente</b>${esc(form.clientName || "N/D")}<br>${esc(form.phone || "")}${form.email ? `<br>${esc(form.email)}` : ""}</div>
+<div class="box"><b>Veicolo</b>${esc(form.carModel || "N/D")}<br>${esc(form.plate || "")}<br>${esc(form.city || "")}</div>
+<div class="box"><b>Evento</b>${esc(form.eventDate || "Non indicata")}<br>${form.insurer ? `Assicurazione: ${esc(form.insurer)}` : ""}${form.claimCode ? `<br>Sinistro: ${esc(form.claimCode)}` : ""}</div>
+<div class="box"><b>Prossima azione</b>${esc(form.nextAction || "Nessuna")}</div>
+</div>
+<div class="quote">
+<div class="box"><b>Bolli usati</b><strong>${esc(quote.dents || 0)}</strong></div>
+<div class="box"><b>Prezzo suggerito</b><strong>${esc(quote.suggested || 0)}€</strong></div>
+<div class="box"><b>Prezzo finale</b><strong>${esc(quote.finalPrice || quote.suggested || 0)}€</strong><div class="muted">Tempo indicativo: ${esc(quote.hours || "—")} h</div></div>
+</div>
+<h2>Zone danno</h2>${zones}
+<h2>Note generali</h2><p class="muted">${esc(form.caseNotes || "Nessuna nota generale.")}</p>
+<p class="muted">Report generato da DentVision AI. Preventivo indicativo da confermare dopo sopralluogo.</p>
+</main><script>setTimeout(()=>window.print(),700)<\/script></body></html>`;
+  }
+
+  async function printCase(caseData = makeCaseObject()) {
+    const popup = window.open("", "_blank");
+    if (!popup) {
+      alert("Il browser ha bloccato la finestra del report. Consenti popup per questo sito e riprova.");
+      return;
+    }
+
+    popup.document.write("<p style='font-family:Arial;padding:24px'>Preparazione report e foto…</p>");
+    popup.document.close();
+
+    const photos = await prepareReportPhotos(caseData.points || []);
+    popup.document.open();
+    popup.document.write(reportHtml(caseData, photos));
+    popup.document.close();
+  }
+
+  async function copyText() {
+    const text = summaryText();
+
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const area = document.createElement("textarea");
+      area.value = text;
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+    }
+
+    alert("Riepilogo copiato.");
+  }
+
+  function shareWhatsApp(caseData = makeCaseObject()) {
+    const text = summaryText(caseData);
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+  }
+
+  function downloadFile(name, content, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 500);
+  }
+
+  function exportJson() {
+    const payload = {
+      app: "DentVision AI",
+      version: "2.0",
+      exportedAt: new Date().toISOString(),
+      note: "Le foto non sono incluse. Restano salvate localmente nel browser originale.",
+      cases: getCases()
+    };
+    downloadFile(`dentvision-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(payload, null, 2), "application/json");
+  }
+
+  function csvEscape(value) {
+    const text = String(value ?? "");
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+
+  function exportCsv() {
+    const rows = [
+      ["ID pratica", "Stato", "Priorità", "Cliente", "Telefono", "Auto", "Targa", "Città", "Zone", "Bolli", "Foto", "Prezzo finale", "Aggiornata"]
+    ];
+
+    getCases().forEach((caseData) => {
+      const form = caseData.form || {};
+      const quote = caseData.quote || {};
+      const photos = (caseData.points || []).reduce((sum, point) => sum + (Number(point.photoCount) || 0), 0);
+      rows.push([
+        caseData.caseId,
+        form.status,
+        form.priority,
+        form.clientName,
+        form.phone,
+        form.carModel,
+        form.plate,
+        form.city,
+        (caseData.points || []).length,
+        quote.dents,
+        photos,
+        quote.finalPrice || quote.suggested,
+        caseData.updatedAt ? new Date(caseData.updatedAt).toLocaleString("it-IT") : ""
+      ]);
+    });
+
+    const csv = rows.map((row) => row.map(csvEscape).join(";")).join("\n");
+    downloadFile(`dentvision-elenco-${new Date().toISOString().slice(0, 10)}.csv`, csv, "text/csv;charset=utf-8");
+  }
+
+  async function importBackup(file) {
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const imported = Array.isArray(parsed) ? parsed : parsed.cases;
+
+      if (!Array.isArray(imported)) throw new Error("Formato backup non valido.");
+
+      const current = getCases();
+      const map = new Map(current.map((item) => [item.id, item]));
+
+      imported.forEach((item) => {
+        if (!item || !item.id) return;
+        map.set(item.id, item);
+      });
+
+      putCases([...map.values()]);
+      renderArchive();
+      alert(`Importate o aggiornate ${imported.length} pratiche. Le foto non sono incluse nel backup.`);
+    } catch (error) {
+      console.error(error);
+      alert("Backup non valido o non leggibile.");
+    }
   }
 
   // ---------- Eventi ----------
 
   function bindEvents() {
+    FORM_IDS.forEach((id) => {
+      $(id).addEventListener("input", () => {
+        if (id === "status") updateDashboard();
+        scheduleDraft();
+      });
+      $(id).addEventListener("change", () => {
+        if (id === "status") updateDashboard();
+        scheduleDraft();
+      });
+    });
+
+    $("newCase").addEventListener("click", () => void newCase());
+    $("saveCaseTop").addEventListener("click", () => void saveCurrentCase());
+    $("saveCase").addEventListener("click", () => void saveCurrentCase());
+
     $("undoPoint").addEventListener("click", async () => {
-      const point = damagePoints.pop();
+      const point = state.points.pop();
       if (!point) return;
       await removePhotosForPointIds([point.id]);
       restoreMarkers();
-      refreshPanelSummary();
+      refreshDamageUI();
     });
 
     $("clearPoints").addEventListener("click", async () => {
-      if (!damagePoints.length || !confirm("Vuoi cancellare tutti i punti danno e le loro foto?")) return;
-      const ids = damagePoints.map(point => point.id);
-      damagePoints = [];
+      if (!state.points.length || !confirm("Vuoi cancellare tutte le zone danno e le loro foto?")) return;
+      const ids = state.points.map((point) => point.id);
+      state.points = [];
       await removePhotosForPointIds(ids);
       restoreMarkers();
-      refreshPanelSummary();
+      refreshDamageUI();
     });
 
-    $("damageList").addEventListener("click", async event => {
-      const remove = event.target.closest("[data-remove-point]");
+    $("damageList").addEventListener("click", async (event) => {
       const edit = event.target.closest("[data-edit-point]");
+      const remove = event.target.closest("[data-remove-point]");
+
+      if (edit) void openPointDialog(Number(edit.dataset.editPoint), false);
 
       if (remove) {
         const index = Number(remove.dataset.removePoint);
-        const [point] = damagePoints.splice(index, 1);
+        const [point] = state.points.splice(index, 1);
         if (point) await removePhotosForPointIds([point.id]);
         restoreMarkers();
-        refreshPanelSummary();
+        refreshDamageUI();
       }
-
-      if (edit) void openPointEditor(Number(edit.dataset.editPoint), false);
     });
 
-    $("savePointEdit").addEventListener("click", savePointEditor);
-    $("cancelPointEdit").addEventListener("click", () => void closePointEditor(true));
-    $("closeDamageDialog").addEventListener("click", () => void closePointEditor(true));
-    dialog.addEventListener("cancel", event => {
+    $("savePointEdit").addEventListener("click", savePointDialog);
+    $("cancelPointEdit").addEventListener("click", () => void closePointDialog(true));
+    $("closeDamageDialog").addEventListener("click", () => void closePointDialog(true));
+    dialog.addEventListener("cancel", (event) => {
       event.preventDefault();
-      void closePointEditor(true);
+      void closePointDialog(true);
     });
-    dialog.addEventListener("click", event => {
-      if (event.target === dialog) void closePointEditor(true);
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) void closePointDialog(true);
     });
 
-    $("pointGalleryPhotos").addEventListener("change", event => {
+    $("pointGalleryPhotos").addEventListener("change", (event) => {
       void addPointPhotos(event.target.files);
       event.target.value = "";
     });
 
-    $("pointCameraPhotos").addEventListener("change", event => {
+    $("pointCameraPhotos").addEventListener("change", (event) => {
       void addPointPhotos(event.target.files);
       event.target.value = "";
     });
 
-    $("pointPhotoPreview").addEventListener("click", event => {
-      const button = event.target.closest("[data-remove-point-photo]");
-      if (button) void removePhotoFromPoint(button.dataset.removePointPhoto);
+    $("pointPhotoPreview").addEventListener("click", (event) => {
+      const remove = event.target.closest("[data-remove-point-photo]");
+      if (remove) void removeCurrentPointPhoto(remove.dataset.removePointPhoto);
     });
 
-    $("clearPointPhotos").addEventListener("click", () => void clearPhotosFromPoint());
-    $("checkPointPhotos").addEventListener("click", () => void checkPointPhotos());
+    $("clearPointPhotos").addEventListener("click", () => void clearCurrentPointPhotos());
+    $("checkPointPhotos").addEventListener("click", () => void checkCurrentPointPhotos());
 
-    $("estimateBtn").addEventListener("click", () => {
-      const estimate = makeEstimate();
-
-      latestEstimate = {
-        date: new Date().toLocaleString("it-IT"),
-        carModel: $("carModel").value.trim() || "Auto non specificata",
-        plate: $("plate").value.trim() || "N/D",
-        city: $("city").value.trim() || "Città non specificata",
-        panels: selectedPanels.length ? selectedPanels.join(", ") : "Punti 3D senza pannello assegnato",
-        panelsArray: [...selectedPanels],
-        damagePoints: damagePoints.map(point => ({ ...point })),
-        dents: String(estimate.dents),
-        dentsValue: String(estimate.dents),
-        size: $("size").value,
-        paint: $("paint").value,
-        name: $("name").value.trim() || "Cliente",
-        phone: $("phone").value.trim() || "N/D",
-        suggestedPrice: estimate.price,
-        finalPrice: estimate.price,
-        estimate: `${estimate.price}€`,
-        severity: estimate.severity,
-        notes: estimate.notes.join(", ") || "Nessuna"
-      };
-
-      $("price").textContent = `${estimate.price}€`;
-      $("finalPrice").value = estimate.price;
-      $("diagnosis").textContent = `Danno ${estimate.severity}. Bolli usati nel calcolo: ${estimate.dents}. Punti 3D: ${damagePoints.length}. Foto collegate ai punti: ${damagePoints.reduce((sum, point) => sum + (point.photoCount || 0), 0)}. ${latestEstimate.notes !== "Nessuna" ? "Note: " + latestEstimate.notes : ""}`;
-      $("result").classList.remove("hidden");
-      $("saveLead").textContent = editIndex === null ? "Salva richiesta" : "Aggiorna richiesta";
-      $("whatsapp").href = `https://wa.me/?text=${encodeURIComponent(buildMessage(latestEstimate))}`;
+    $("calculateQuote").addEventListener("click", () => renderQuote(true));
+    $("useZonesTotal").addEventListener("click", () => {
+      const dents = totalDents();
+      if (!dents) {
+        alert("Prima inserisci almeno una zona danno.");
+        return;
+      }
+      $("manualDents").value = dents;
+      renderQuote(true);
     });
 
     $("finalPrice").addEventListener("input", () => {
-      if (!latestEstimate) return;
-      const value = Number($("finalPrice").value);
-      if (!Number.isFinite(value) || value < 0) return;
-
-      latestEstimate.finalPrice = value;
-      latestEstimate.estimate = `${value}€`;
-      $("price").textContent = `${value}€`;
-      $("whatsapp").href = `https://wa.me/?text=${encodeURIComponent(buildMessage(latestEstimate))}`;
+      scheduleDraft();
+      updateDashboard();
     });
 
-    $("saveLead").addEventListener("click", () => {
-      if (!latestEstimate) {
-        alert("Prima genera una stima.");
-        return;
+    $("shareWhatsApp").addEventListener("click", () => shareWhatsApp());
+    $("copySummary").addEventListener("click", () => void copyText());
+    $("printReport").addEventListener("click", () => void printCase());
+
+    $("search").addEventListener("input", renderArchive);
+    $("statusFilter").addEventListener("change", renderArchive);
+
+    $("leads").addEventListener("click", async (event) => {
+      const open = event.target.closest("[data-open-case]");
+      const wa = event.target.closest("[data-case-wa]");
+      const print = event.target.closest("[data-case-print]");
+      const del = event.target.closest("[data-delete-case]");
+
+      if (open) openCase(open.dataset.openCase);
+
+      if (wa) {
+        const caseData = getCases().find((item) => item.id === wa.dataset.caseWa);
+        if (caseData) shareWhatsApp(caseData);
       }
 
-      const leads = getLeads();
-      if (editIndex === null) leads.unshift(latestEstimate);
-      else leads[editIndex] = latestEstimate;
+      if (print) {
+        const caseData = getCases().find((item) => item.id === print.dataset.casePrint);
+        if (caseData) void printCase(caseData);
+      }
 
-      putLeads(leads);
-      alert(editIndex === null ? "Richiesta salvata." : "Richiesta aggiornata.");
-      renderLeads();
-      resetForm();
+      if (del) {
+        const id = del.dataset.deleteCase;
+        const caseData = getCases().find((item) => item.id === id);
+        if (!caseData || !confirm("Eliminare questa pratica e le foto locali collegate?")) return;
+
+        await removePhotosForPointIds((caseData.points || []).map((point) => point.id));
+        putCases(getCases().filter((item) => item.id !== id));
+        renderArchive();
+      }
     });
 
-    $("copyText").addEventListener("click", async () => {
-      if (!latestEstimate) return;
-      const text = buildMessage(latestEstimate);
-
-      try {
-        await navigator.clipboard.writeText(text);
-      } catch {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        textArea.remove();
-      }
-
-      alert("Testo copiato.");
-    });
-
-    $("cancelEdit").addEventListener("click", resetForm);
-    $("search").addEventListener("input", renderLeads);
-
-    $("leads").addEventListener("click", async event => {
-      const edit = event.target.closest("[data-edit]");
-      const del = event.target.closest("[data-delete]");
-
-      if (edit) loadEdit(Number(edit.dataset.edit));
-
-      if (del && confirm("Vuoi davvero eliminare questa richiesta e le foto locali collegate?")) {
-        const leads = getLeads();
-        const index = Number(del.dataset.delete);
-        const [removed] = leads.splice(index, 1);
-
-        await removePhotosForPointIds((removed?.damagePoints || []).map(point => point.id));
-        putLeads(leads);
-        renderLeads();
-      }
+    $("exportJson").addEventListener("click", exportJson);
+    $("exportCsv").addEventListener("click", exportCsv);
+    $("importBackup").addEventListener("change", (event) => {
+      void importBackup(event.target.files?.[0]);
+      event.target.value = "";
     });
   }
 
-  bindEvents();
-  refreshPanelSummary();
-  renderLeads();
+  function boot() {
+    restoreDraft();
+    updateCaseHeader();
+    bindEvents();
+    restoreMarkers();
+    refreshDamageUI();
+    renderArchive();
+    updateDashboard();
+
+    if (state.lastQuote) {
+      $("quoteBox").classList.remove("hidden");
+      $("suggestedPrice").textContent = `${state.lastQuote.suggested || 0}€`;
+      $("estimatedHours").textContent = `${state.lastQuote.hours || "—"} h`;
+      $("quoteDents").textContent = String(state.lastQuote.dents || 0);
+      $("finalPrice").value = state.lastQuote.finalPrice ?? state.lastQuote.suggested ?? "";
+      const breakdown = $("quoteBreakdown");
+      breakdown.innerHTML = "";
+      [`Base ${state.lastQuote.base || 0}€`, ...(state.lastQuote.modifiers || [])].forEach((text) => {
+        const chip = document.createElement("span");
+        chip.textContent = text;
+        breakdown.appendChild(chip);
+      });
+    }
+
+    saveDraft();
+  }
+
+  boot();
 })();

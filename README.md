@@ -1,27 +1,27 @@
-# DentVision AI v1.8.2 – Foto per singolo danno
+# DentVision AI v2.0 – Versione operativa completa
 
-## Novità
-Ogni punto danno 3D ora ha una propria scheda con:
-- pannello;
-- numero bolli;
-- grandezza;
-- profondità;
-- vernice;
-- nota libera;
-- foto specifiche di quella zona.
+## Cosa contiene
+- pratica cliente + veicolo;
+- stato lavorazione, priorità, appuntamento e prossima azione;
+- berlina 3D ruotabile e zoomabile;
+- zone danno con pannello, riferimento, quantità bolli, grandezza, profondità, vernice e note;
+- fino a 6 foto per zona;
+- controllo tecnico base delle foto: quantità, luce, contrasto e definizione;
+- listino, modificatori, prezzo suggerito, prezzo finale modificabile e tempo indicativo;
+- archivio con ricerca e filtro stato;
+- WhatsApp e copia riepilogo;
+- report stampabile, da salvare come PDF dal menu di stampa del telefono;
+- backup JSON ed elenco CSV;
+- bozza automatica locale.
 
-## Come funziona
-1. Tocca l'auto.
-2. Compila la scheda del punto.
-3. In **Foto di questo danno** scegli:
-   - **Apri galleria** per foto già sul telefono;
-   - **Scatta foto** per usare la fotocamera.
-4. Le foto restano collegate solo a quel punto.
+## Limiti onesti
+Le foto sono memorizzate nel browser del telefono tramite IndexedDB:
+- non vengono pubblicate online;
+- non vengono inviate automaticamente su WhatsApp;
+- non entrano nel backup JSON;
+- se cancelli i dati del browser o cambi telefono, possono sparire.
 
-Puoi aggiungere al massimo 6 foto per punto. Sono salvate localmente nel browser del telefono tramite IndexedDB e non vengono inviate a WhatsApp né pubblicate online.
-
-## Nota
-Le foto non sono ancora esportate in PDF e non sono analizzate da IA. Questa è la base per il passo successivo: analisi foto per zona danno.
+L'IA che riconosce automaticamente bolli da foto non è inclusa: per farla davvero serve un server sicuro e un modello addestrato. La v2.0 prepara tutte le informazioni che quell'IA dovrà leggere.
 
 ## File da caricare nella radice GitHub
 - index.html
@@ -35,5 +35,6 @@ Le foto non sono ancora esportate in PDF e non sono analizzate da IA. Questa è 
 - generic_sedan_car.glb
 
 ## Commit
-DentVision AI v1.8.2 foto per singolo danno
-Retry pubblicazione foto per danno v1.8.2
+DentVision AI v2.0 gestione completa PDR
+
+Apri il sito con `?v=200` dopo la pubblicazione.

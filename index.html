@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
-  <meta name="description" content="DentVision AI - preventivi PDR con modello 3D, schede danno e foto per zona">
-  <title>DentVision AI v1.8.2</title>
-  <link rel="manifest" href="manifest.json?v=182">
-  <link rel="stylesheet" href="style.css?v=182">
+  <meta name="description" content="DentVision AI - gestione completa pratiche PDR con auto 3D, foto e preventivi">
+  <title>DentVision AI v2.0</title>
+  <link rel="manifest" href="manifest.json?v=200">
+  <link rel="stylesheet" href="style.css?v=200">
   <script type="module">
     (async () => {
       const sources = [
@@ -30,25 +30,108 @@
 <body>
   <main class="app">
     <header class="hero">
-      <span class="badge">DentVision AI · v1.8.2</span>
-      <h1>Stima danni grandine</h1>
-      <p>Ogni punto 3D può avere bolli, note e foto specifiche della zona.</p>
+      <div class="hero-top">
+        <div>
+          <span class="badge">DentVision AI · v2.0 Completa</span>
+          <h1>Gestione danni grandine</h1>
+          <p>Pratica, auto 3D, foto per zona, preventivo, archivio e report professionale in un unico flusso.</p>
+        </div>
+        <div class="hero-actions">
+          <button id="newCase" type="button" class="hero-secondary">Nuova pratica</button>
+          <button id="saveCaseTop" type="button">Salva pratica</button>
+        </div>
+      </div>
+      <div class="case-strip">
+        <span><b>Pratica:</b> <strong id="caseIdText">DV-...</strong></span>
+        <span id="draftStatus">Bozza locale attiva</span>
+      </div>
     </header>
 
+    <section class="dashboard">
+      <article class="metric-card">
+        <span>Stato pratica</span>
+        <strong id="dashStatus">Nuova</strong>
+      </article>
+      <article class="metric-card">
+        <span>Zone segnate</span>
+        <strong id="dashZones">0</strong>
+      </article>
+      <article class="metric-card">
+        <span>Bolli totali</span>
+        <strong id="dashDents">0</strong>
+      </article>
+      <article class="metric-card">
+        <span>Foto collegate</span>
+        <strong id="dashPhotos">0</strong>
+      </article>
+      <article class="metric-card">
+        <span>Stima lavoro</span>
+        <strong id="dashHours">—</strong>
+      </article>
+    </section>
+
     <section class="card">
-      <h2>Dati veicolo</h2>
+      <div class="section-title">
+        <div>
+          <span class="section-kicker">01 · Pratica</span>
+          <h2>Cliente e veicolo</h2>
+        </div>
+        <span class="mini-note">I dati restano nel browser di questo telefono.</span>
+      </div>
+
       <div class="grid">
+        <label>Nome cliente<input id="clientName" placeholder="Es. Mario Rossi" autocomplete="name"></label>
+        <label>Telefono<input id="phone" placeholder="+39..." inputmode="tel" autocomplete="tel"></label>
+        <label>Email<input id="email" placeholder="Facoltativa" inputmode="email" autocomplete="email"></label>
         <label>Marca e modello<input id="carModel" placeholder="Es. Opel Insignia 2014" autocomplete="off"></label>
-        <label>Targa o riferimento<input id="plate" placeholder="Facoltativo" autocomplete="off"></label>
-        <label>Città<input id="city" placeholder="Es. Lissone" autocomplete="off"></label>
+        <label>Targa o riferimento<input id="plate" placeholder="Es. AB123CD" autocomplete="off"></label>
+        <label>Città / località<input id="city" placeholder="Es. Lissone" autocomplete="address-level2"></label>
       </div>
     </section>
 
     <section class="card">
-      <div class="section-head">
+      <div class="section-title">
         <div>
-          <h2>Mappa danni 3D</h2>
-          <p class="hint">Trascina per ruotare, usa due dita per zoomare. Un tocco apre la scheda del danno: lì aggiungi quantità, note e foto di quella zona.</p>
+          <span class="section-kicker">02 · Workflow</span>
+          <h2>Stato e organizzazione</h2>
+        </div>
+      </div>
+
+      <div class="grid">
+        <label>Stato pratica
+          <select id="status">
+            <option value="Nuova">Nuova</option>
+            <option value="Sopralluogo">Sopralluogo</option>
+            <option value="Preventivo inviato">Preventivo inviato</option>
+            <option value="Approvata">Approvata</option>
+            <option value="Da fissare">Da fissare</option>
+            <option value="In lavorazione">In lavorazione</option>
+            <option value="Completata">Completata</option>
+            <option value="Persa">Persa</option>
+          </select>
+        </label>
+        <label>Priorità
+          <select id="priority">
+            <option value="Normale">Normale</option>
+            <option value="Alta">Alta</option>
+            <option value="Urgente">Urgente</option>
+          </select>
+        </label>
+        <label>Data evento / grandinata<input id="eventDate" type="date"></label>
+        <label>Appuntamento / richiamo<input id="appointment" type="datetime-local"></label>
+        <label>Assicurazione<input id="insurer" placeholder="Facoltativa"></label>
+        <label>Numero sinistro<input id="claimCode" placeholder="Facoltativo"></label>
+      </div>
+
+      <label>Prossima azione<textarea id="nextAction" rows="2" placeholder="Es. richiamare domani, inviare preventivo, fissare appuntamento..."></textarea></label>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <div>
+          <span class="section-kicker">03 · Mappa danni</span>
+          <h2>Auto 3D e zone di lavoro</h2>
+          <p class="hint">Trascina per ruotare, due dita per zoomare. Tocca la carrozzeria per aprire una scheda: quantità, gravità, nota e foto di quella zona.</p>
         </div>
         <span id="threeStatus" class="status-pill warning">Caricamento modello…</span>
       </div>
@@ -81,62 +164,169 @@
       </div>
 
       <div class="damage-summary">
-        <strong id="pointCount">0 punti danno segnati</strong>
-        <span id="panelSummary">Pannelli: nessuno</span>
+        <strong id="pointCount">0 zone danno</strong>
+        <span id="panelSummary">Pannelli: da definire</span>
       </div>
+
       <div id="damageList" class="damage-list"></div>
 
       <div class="actions">
-        <button id="undoPoint" type="button" class="secondary">Togli ultimo punto</button>
-        <button id="clearPoints" type="button" class="danger">Cancella punti</button>
+        <button id="undoPoint" type="button" class="secondary">Togli ultima zona</button>
+        <button id="clearPoints" type="button" class="danger">Cancella tutte le zone</button>
       </div>
-      <p class="small">Il modello non ha i pannelli nominati internamente. Nella scheda scegli tu cofano, tetto, fiancata, baule o parafango. Le foto rimangono salvate localmente nel browser di questo telefono.</p>
+      <p class="small">Il file 3D non contiene pannelli con nomi separati: nella scheda scegli manualmente cofano, tetto, fiancata, baule o parafango.</p>
     </section>
 
     <section class="card">
-      <h2>Danno e listino</h2>
+      <div class="section-title">
+        <div>
+          <span class="section-kicker">04 · Stima</span>
+          <h2>Preventivo e tempi</h2>
+        </div>
+      </div>
+
       <div class="grid">
-        <label>Numero bolli totale<input id="dents" type="number" min="1" step="1" inputmode="numeric" placeholder="Usa le schede oppure scrivi Es. 250"></label>
-        <label>Grandezza media<select id="size"><option value="piccola">Piccola</option><option value="media">Media</option><option value="grande">Grande</option></select></label>
-        <label>Vernice danneggiata?<select id="paint"><option value="no">No / non sembra</option><option value="si">Sì</option></select></label>
+        <label>Bolli totali manuali <span class="input-help">Usato solo se non hai zone 3D</span>
+          <input id="manualDents" type="number" min="1" step="1" inputmode="numeric" placeholder="Es. 250">
+        </label>
+        <label>Grandezza prevalente
+          <select id="globalSize">
+            <option value="piccola">Piccola</option>
+            <option value="media">Media</option>
+            <option value="grande">Grande</option>
+          </select>
+        </label>
+        <label>Vernice / carrozzeria
+          <select id="globalPaint">
+            <option value="no">Integra / non sembra danneggiata</option>
+            <option value="si">Danneggiata / da valutare</option>
+          </select>
+        </label>
+        <label>Difficoltà generale
+          <select id="difficulty">
+            <option value="standard">Standard</option>
+            <option value="difficile">Difficile</option>
+            <option value="molto_difficile">Molto difficile</option>
+          </select>
+        </label>
       </div>
-      <div class="listino"><strong>Listino base:</strong> 1-50: 350€ · 51-200: 550€ · 201-300: 750€ · 301-550: 950€ · oltre 550: 1.150€</div>
+
+      <div class="listino">
+        <strong>Listino base:</strong> 1–50: 350€ · 51–200: 550€ · 201–300: 750€ · 301–550: 950€ · oltre 550: 1.150€.
+        <br><span class="small">La cifra è una stima operativa. Il prezzo finale resta sempre modificabile.</span>
+      </div>
+
+      <div class="actions">
+        <button id="calculateQuote" type="button">Calcola preventivo</button>
+        <button id="useZonesTotal" type="button" class="secondary">Usa totale delle zone</button>
+      </div>
+
+      <div id="quoteBox" class="quote-box hidden">
+        <div class="quote-main">
+          <div>
+            <span class="quote-label">Prezzo suggerito</span>
+            <strong id="suggestedPrice">—</strong>
+          </div>
+          <div>
+            <span class="quote-label">Tempo indicativo</span>
+            <strong id="estimatedHours">—</strong>
+          </div>
+          <div>
+            <span class="quote-label">Bolli usati</span>
+            <strong id="quoteDents">—</strong>
+          </div>
+        </div>
+        <div id="quoteBreakdown" class="quote-breakdown"></div>
+        <label>Prezzo finale concordato<input id="finalPrice" type="number" min="0" step="10" inputmode="numeric" placeholder="Modificabile"></label>
+      </div>
     </section>
 
     <section class="card">
-      <h2>Cliente</h2>
-      <div class="grid">
-        <label>Nome<input id="name" placeholder="Nome cliente" autocomplete="off"></label>
-        <label>Telefono<input id="phone" placeholder="+39..." inputmode="tel" autocomplete="off"></label>
+      <div class="section-title">
+        <div>
+          <span class="section-kicker">05 · Note</span>
+          <h2>Osservazioni generali</h2>
+        </div>
       </div>
-      <div class="actions"><button id="estimateBtn" type="button">Genera stima</button><button id="cancelEdit" class="secondary hidden" type="button">Annulla modifica</button></div>
-    </section>
-
-    <section id="result" class="card hidden">
-      <h2>Risultato</h2>
-      <div id="price" class="price">—</div>
-      <p id="diagnosis"></p>
-      <label>Prezzo finale modificabile<input id="finalPrice" type="number" min="0" step="10" inputmode="numeric"></label>
-      <div class="actions"><button id="saveLead" type="button">Salva richiesta</button><button id="copyText" type="button">Copia testo</button><a id="whatsapp" class="whatsapp" target="_blank" rel="noopener">WhatsApp</a></div>
+      <label>Note della pratica<textarea id="caseNotes" rows="5" placeholder="Es. danno vecchio, cliente vuole urgenza, veicolo da ritirare, richiesta assicurazione..."></textarea></label>
     </section>
 
     <section class="card">
-      <h2>Archivio richieste</h2>
-      <input id="search" placeholder="Cerca nome, telefono, targa, auto, città o punti danno...">
+      <div class="section-title">
+        <div>
+          <span class="section-kicker">06 · Salvataggio e invio</span>
+          <h2>Chiudi la pratica</h2>
+          <p class="hint">Salva prima. Poi puoi inviare un riepilogo WhatsApp o creare un report stampabile in PDF.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="saveCase" type="button">Salva pratica</button>
+        <button id="shareWhatsApp" type="button" class="whatsapp">WhatsApp</button>
+        <button id="copySummary" type="button" class="secondary">Copia riepilogo</button>
+        <button id="printReport" type="button" class="secondary">Stampa / Salva PDF</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <div>
+          <span class="section-kicker">07 · Archivio</span>
+          <h2>Pratiche salvate</h2>
+        </div>
+        <span id="archiveCount" class="mini-note">0 pratiche</span>
+      </div>
+
+      <div class="grid archive-filters">
+        <label>Cerca pratica<input id="search" placeholder="Nome, targa, auto, città, pannello, nota..."></label>
+        <label>Filtra stato
+          <select id="statusFilter">
+            <option value="">Tutti gli stati</option>
+            <option value="Nuova">Nuova</option>
+            <option value="Sopralluogo">Sopralluogo</option>
+            <option value="Preventivo inviato">Preventivo inviato</option>
+            <option value="Approvata">Approvata</option>
+            <option value="Da fissare">Da fissare</option>
+            <option value="In lavorazione">In lavorazione</option>
+            <option value="Completata">Completata</option>
+            <option value="Persa">Persa</option>
+          </select>
+        </label>
+      </div>
+
       <div id="leads"></div>
+    </section>
+
+    <section class="card compact-card">
+      <div class="section-title">
+        <div>
+          <span class="section-kicker">08 · Backup</span>
+          <h2>Esporta e recupera dati</h2>
+        </div>
+      </div>
+      <p class="small">Il backup esporta pratiche, preventivi e dettagli. Le foto restano nel browser di questo telefono e non vengono incluse nel file.</p>
+      <input id="importBackup" class="visually-hidden-file" type="file" accept=".json">
+      <div class="actions">
+        <button id="exportJson" type="button" class="secondary">Backup JSON</button>
+        <button id="exportCsv" type="button" class="secondary">Esporta elenco CSV</button>
+        <label for="importBackup" class="file-button secondary-file">Importa backup</label>
+      </div>
+    </section>
+
+    <section class="honesty-note">
+      <strong>Nota IA:</strong> questa v2.0 organizza tutto il lavoro e controlla la qualità tecnica delle foto. Non finge di riconoscere bolli da sola: l’analisi IA reale richiederà un server sicuro e un modello addestrato.
     </section>
 
     <dialog id="damageDialog" class="damage-dialog" aria-labelledby="damageDialogTitle">
       <div class="dialog-card">
         <div class="dialog-head">
           <div>
-            <span class="badge">Punto danno 3D</span>
-            <h2 id="damageDialogTitle">Dettagli del punto</h2>
+            <span class="badge">Zona danno 3D</span>
+            <h2 id="damageDialogTitle">Dettagli zona</h2>
           </div>
           <button id="closeDamageDialog" type="button" class="icon-close" aria-label="Chiudi">×</button>
         </div>
 
-        <p class="hint">Completa questa scheda. Il puntino rosso resta nel punto scelto e le foto vengono collegate solo a questo danno.</p>
+        <p class="hint">Ogni zona può avere quantità, profondità, nota e foto proprie. Non usare un punto per ogni bollo: un punto rappresenta una zona di lavoro.</p>
 
         <div class="grid">
           <label>Pannello
@@ -154,6 +344,7 @@
               <option value="Altro">Altro</option>
             </select>
           </label>
+          <label>Zona / riferimento<input id="pointZone" placeholder="Es. tetto centrale, vicino nervatura"></label>
           <label>Numero bolli in questa zona<input id="pointDents" type="number" min="1" step="1" inputmode="numeric" value="1"></label>
           <label>Grandezza
             <select id="pointSize"><option value="piccola">Piccola</option><option value="media">Media</option><option value="grande">Grande</option></select>
@@ -166,13 +357,13 @@
           </label>
         </div>
 
-        <label>Nota del levabolli<textarea id="pointNote" rows="4" placeholder="Es. nervatura, bordo porta, accesso difficile, grandine vecchia..."></textarea></label>
+        <label>Nota del levabolli<textarea id="pointNote" rows="4" placeholder="Es. accesso difficile, bordo porta, nervatura, grandine vecchia..."></textarea></label>
 
         <section class="point-photos">
           <div class="point-photos-head">
             <div>
-              <h3>Foto di questo danno</h3>
-              <p id="pointPhotoHint" class="small">Nessuna foto collegata a questo punto.</p>
+              <h3>Foto di questa zona</h3>
+              <p id="pointPhotoHint" class="small">Nessuna foto collegata.</p>
             </div>
             <span id="pointPhotoBadge" class="photo-badge">0 foto</span>
           </div>
@@ -192,13 +383,13 @@
         </section>
 
         <div class="actions dialog-actions">
-          <button id="cancelPointEdit" type="button" class="secondary">Annulla punto</button>
+          <button id="cancelPointEdit" type="button" class="secondary">Annulla zona</button>
           <button id="savePointEdit" type="button">Salva dettagli</button>
         </div>
       </div>
     </dialog>
   </main>
-  <script src="ai-config.js?v=182"></script>
-  <script src="app.js?v=182" defer></script>
+  <script src="ai-config.js?v=200"></script>
+  <script src="app.js?v=200" defer></script>
 </body>
 </html>
