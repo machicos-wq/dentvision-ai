@@ -4,12 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
-  <meta name="description" content="DentVision AI - preventivi PDR con modello 3D reale">
-  <title>DentVision AI v1.8.0</title>
-  <link rel="manifest" href="manifest.json?v=180">
-  <link rel="stylesheet" href="style.css?v=180">
+  <meta name="description" content="DentVision AI - preventivi PDR con modello 3D reale e schede danno">
+  <title>DentVision AI v1.8.1</title>
+  <link rel="manifest" href="manifest.json?v=181">
+  <link rel="stylesheet" href="style.css?v=181">
   <script type="module">
-    // Il motore 3D viene tentato da due CDN. Il modello dell'auto invece resta nel repository.
     (async () => {
       const sources = [
         "https://cdn.jsdelivr.net/npm/@google/model-viewer@4.3.1/dist/model-viewer.min.js",
@@ -31,9 +30,9 @@
 <body>
   <main class="app">
     <header class="hero">
-      <span class="badge">DentVision AI · v1.8.0</span>
+      <span class="badge">DentVision AI · v1.8.1</span>
       <h1>Stima danni grandine</h1>
-      <p>Modello 3D reale di berlina, ruotabile e zoomabile con le dita.</p>
+      <p>Modello 3D reale con scheda, quantità e note per ogni punto danno.</p>
     </header>
 
     <section class="card">
@@ -49,7 +48,7 @@
       <div class="section-head">
         <div>
           <h2>Mappa danni 3D</h2>
-          <p class="hint">Trascina per ruotare, usa due dita per zoomare. Tocca la carrozzeria senza trascinare per lasciare un puntino rosso fissato sul modello.</p>
+          <p class="hint">Trascina per ruotare, usa due dita per zoomare. Un tocco crea un punto rosso e apre subito la sua scheda.</p>
         </div>
         <span id="threeStatus" class="status-pill warning">Caricamento modello…</span>
       </div>
@@ -91,7 +90,7 @@
         <button id="undoPoint" type="button" class="secondary">Togli ultimo punto</button>
         <button id="clearPoints" type="button" class="danger">Cancella punti</button>
       </div>
-      <p class="small">Il modello ricevuto non ha cofano, tetto e porte nominati come pezzi separati: i puntini segnano il punto preciso sulla carrozzeria; la classificazione automatica del pannello richiederà un modello preparato a pannelli.</p>
+      <p class="small">Il modello non ha i pannelli nominati internamente. Nella scheda puoi scegliere tu cofano, tetto, fiancata, baule o parafango e aggiungere una nota.</p>
     </section>
 
     <section class="card">
@@ -113,7 +112,7 @@
     <section class="card">
       <h2>Danno e listino</h2>
       <div class="grid">
-        <label>Numero bolli<input id="dents" type="number" min="1" step="1" inputmode="numeric" placeholder="Es. 250"></label>
+        <label>Numero bolli totale<input id="dents" type="number" min="1" step="1" inputmode="numeric" placeholder="Usa le schede oppure scrivi Es. 250"></label>
         <label>Grandezza media<select id="size"><option value="piccola">Piccola</option><option value="media">Media</option><option value="grande">Grande</option></select></label>
         <label>Vernice danneggiata?<select id="paint"><option value="no">No / non sembra</option><option value="si">Sì</option></select></label>
       </div>
@@ -142,8 +141,53 @@
       <input id="search" placeholder="Cerca nome, telefono, targa, auto, città o punti danno...">
       <div id="leads"></div>
     </section>
+
+    <dialog id="damageDialog" class="damage-dialog" aria-labelledby="damageDialogTitle">
+      <div class="dialog-card">
+        <div class="dialog-head">
+          <div>
+            <span class="badge">Punto danno 3D</span>
+            <h2 id="damageDialogTitle">Dettagli del punto</h2>
+          </div>
+          <button id="closeDamageDialog" type="button" class="icon-close" aria-label="Chiudi">×</button>
+        </div>
+        <p class="hint">Completa questa scheda. Il puntino rosso resta sul punto scelto.</p>
+        <div class="grid">
+          <label>Pannello
+            <select id="pointPanel">
+              <option value="Da definire">Da definire</option>
+              <option value="Cofano">Cofano</option>
+              <option value="Tetto">Tetto</option>
+              <option value="Baule">Baule</option>
+              <option value="Fiancata sinistra">Fiancata sinistra</option>
+              <option value="Fiancata destra">Fiancata destra</option>
+              <option value="Parafango anteriore sinistro">Parafango anteriore sinistro</option>
+              <option value="Parafango anteriore destro">Parafango anteriore destro</option>
+              <option value="Parafango posteriore sinistro">Parafango posteriore sinistro</option>
+              <option value="Parafango posteriore destro">Parafango posteriore destro</option>
+              <option value="Altro">Altro</option>
+            </select>
+          </label>
+          <label>Numero bolli in questa zona<input id="pointDents" type="number" min="1" step="1" inputmode="numeric" value="1"></label>
+          <label>Grandezza
+            <select id="pointSize"><option value="piccola">Piccola</option><option value="media">Media</option><option value="grande">Grande</option></select>
+          </label>
+          <label>Profondità
+            <select id="pointDepth"><option value="lieve">Lieve</option><option value="media">Media</option><option value="forte">Forte</option></select>
+          </label>
+          <label>Vernice
+            <select id="pointPaint"><option value="no">Integra / non sembra danneggiata</option><option value="si">Danneggiata</option></select>
+          </label>
+        </div>
+        <label>Nota del levabolli<textarea id="pointNote" rows="4" placeholder="Es. nervatura, bordo porta, accesso difficile, grandine vecchia..."></textarea></label>
+        <div class="actions dialog-actions">
+          <button id="cancelPointEdit" type="button" class="secondary">Annulla punto</button>
+          <button id="savePointEdit" type="button">Salva dettagli</button>
+        </div>
+      </div>
+    </dialog>
   </main>
-  <script src="ai-config.js?v=180"></script>
-  <script src="app.js?v=180" defer></script>
+  <script src="ai-config.js?v=181"></script>
+  <script src="app.js?v=181" defer></script>
 </body>
 </html>

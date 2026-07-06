@@ -1,18 +1,12 @@
-# DentVision AI v1.8.0 – modello 3D reale
-
-Questa versione sostituisce l'auto disegnata a mano con il file `generic_sedan_car.glb` ricevuto.
+# DentVision AI v1.8.1 – Schede danno e note
 
 ## Cosa cambia
-- Berlina 3D reale in GLB, inclusa nella cartella del sito.
-- Rotazione e zoom con le dita tramite `model-viewer`.
-- Tocca la carrozzeria per creare un hotspot rosso fissato sulla superficie del modello.
-- I puntini vengono salvati nella pratica e ripristinati quando modifichi una richiesta.
-- Galleria e fotocamera restano separate.
-
-## Importante
-Il file GLB ricevuto non contiene pannelli della carrozzeria nominati separatamente come cofano, tetto e porte. Quindi l'app salva il punto esatto, ma lo chiama `Carrozzeria 3D`; per la selezione automatica del pannello serve un modello GLB preparato con quei pezzi separati e nominati.
-
-Il modello 3D è un file locale nel repository. Il componente che lo mostra viene caricato da CDN, con tentativo di riserva su un secondo CDN: per la prima apertura serve internet.
+- Tocchi la carrozzeria: appare un **puntino rosso numerato** e si apre subito la sua scheda.
+- Per ogni punto puoi indicare: pannello, numero bolli, grandezza, profondità, vernice e nota libera.
+- Puoi riaprire ogni punto con **Modifica** o toccando il puntino rosso sul modello.
+- Il riepilogo mostra bolli indicati, pannelli e note.
+- Il preventivo usa il totale bolli scritto in alto; se resta vuoto, usa il totale delle schede punto.
+- Dettaglio punti incluso nel testo WhatsApp e nell'archivio.
 
 ## File da caricare nella radice GitHub
 - index.html
@@ -26,8 +20,9 @@ Il modello 3D è un file locale nel repository. Il componente che lo mostra vien
 - generic_sedan_car.glb
 
 ## Commit
-`DentVision AI v1.8.0 modello 3D reale`
-Retry pubblicazione modello 3D v1.8
+`DentVision AI v1.8.1 schede danno e note`
+
+Dopo il commit apri il sito con `?v=181` alla fine dell'indirizzo.
 
 ## Crediti modello
 Metadata nel GLB: **Generic Sedan Car**, autore **assetfactory**, licenza **Sketchfab Standard**.
