@@ -1,6 +1,7 @@
-// DentVision AI v2.0
+// DentVision AI v2.1.1 Assistente IA
 // Gestione pratica PDR completa: modello 3D, zone, foto, preventivo, archivio, PDF e backup.
 // Le foto restano in IndexedDB, localmente sul browser di questo telefono.
+// L’analisi visiva passa solo da una Netlify Function: nessuna chiave API viene salvata nel browser.
 (() => {
   "use strict";
 
@@ -89,7 +90,8 @@
       depth: ["lieve", "media", "forte"].includes(point.depth) ? point.depth : "lieve",
       paint: point.paint === "si" ? "si" : "no",
       note: String(point.note || ""),
-      photoCount: Math.max(0, Number(point.photoCount) || 0)
+      photoCount: Math.max(0, Number(point.photoCount) || 0),
+      aiAnalysis: point.aiAnalysis && typeof point.aiAnalysis === "object" ? { ...point.aiAnalysis } : null
     };
   }
 
@@ -441,6 +443,7 @@
     $("pointDepth").value = point.depth || "lieve";
     $("pointPaint").value = point.paint === "si" ? "si" : "no";
     $("pointNote").value = point.note || "";
+    renderAiResult(point.aiAnalysis);
 
     if (typeof dialog.showModal === "function") {
       if (!dialog.open) dialog.showModal();
@@ -467,6 +470,7 @@
     $("pointPhotoHint").textContent = "Nessuna foto collegata.";
     $("pointPhotoBadge").textContent = "0 foto";
     $("pointPhotoCheck").className = "photo-check hidden";
+    renderAiResult(null);
     editingPointIndex = null;
     creatingPointIndex = null;
 
@@ -575,8 +579,10 @@
     try {
       for (const file of selected) await savePointPhoto(point.id, file);
       if (files.length > selected.length) alert(`Aggiunte ${selected.length} foto. Il limite per zona è ${MAX_PHOTOS_PER_POINT}.`);
+      point.aiAnalysis = null;
       await loadPointPhotos(point.id);
       $("pointPhotoCheck").className = "photo-check hidden";
+      renderAiResult(null);
     } catch (error) {
       console.error(error);
       alert("Non sono riuscito a salvare una o più foto. Prova con immagini più leggere.");
@@ -587,8 +593,10 @@
     const point = editingPoint();
     if (!point) return;
     await removePointPhoto(photoId);
+    point.aiAnalysis = null;
     await loadPointPhotos(point.id);
     $("pointPhotoCheck").className = "photo-check hidden";
+    renderAiResult(null);
   }
 
   async function clearCurrentPointPhotos() {
@@ -597,8 +605,10 @@
     if (!confirm(`Cancellare tutte le ${activePointPhotos.length} foto di questa zona?`)) return;
 
     await removePhotosForPointIds([point.id]);
+    point.aiAnalysis = null;
     await loadPointPhotos(point.id);
     $("pointPhotoCheck").className = "photo-check hidden";
+    renderAiResult(null);
   }
 
   function imageFromBlob(blob) {
@@ -670,6 +680,183 @@
     const box = $("pointPhotoCheck");
     box.className = `photo-check ${score >= 70 ? "good" : "warning"}`;
     box.innerHTML = `<strong>Controllo foto zona: ${score}/100</strong><br><span class="small">${issues.length ? issues.join(" · ") : "Qualità tecnica buona per questa zona."}</span>`;
+  }
+
+  // ---------- Analisi IA foto ----------
+
+  function aiLabel(value, fallback = "Da valutare") {
+    const labels = {
+      "none_visible": "Nessun danno chiaro",
+      "possible": "Danno possibile",
+      "likely": "Danno probabile",
+      "piccola": "Piccola",
+      "media": "Media",
+      "grande": "Grande",
+      "non_valutabile": "Non valutabile",
+      "lieve": "Lieve",
+      "forte": "Forte",
+      "no": "Vernice non visibilmente colpita",
+      "si": "Vernice da verificare",
+      "incerto": "Non valutabile"
+    };
+    return labels[value] || value || fallback;
+  }
+
+  function safeAnalysis(value) {
+    if (!value || typeof value !== "object") return null;
+    const min = Math.max(0, Math.round(Number(value.dent_count_min) || 0));
+    const max = Math.max(min, Math.round(Number(value.dent_count_max) || min));
+    const suggested = Math.min(max, Math.max(min, Math.round(Number(value.suggested_dents) || min)));
+    return {
+      verdict: String(value.verdict || "Pre-analisi IA"),
+      panel_suggestion: String(value.panel_suggestion || "Da definire"),
+      damage_presence: String(value.damage_presence || "possible"),
+      dent_count_min: min,
+      dent_count_max: max,
+      suggested_dents: suggested,
+      size: ["piccola", "media", "grande", "non_valutabile"].includes(value.size) ? value.size : "non_valutabile",
+      depth: ["lieve", "media", "forte", "non_valutabile"].includes(value.depth) ? value.depth : "non_valutabile",
+      paint: ["no", "si", "incerto"].includes(value.paint) ? value.paint : "incerto",
+      confidence: Math.max(0, Math.min(100, Math.round(Number(value.confidence) || 0))),
+      photo_quality: String(value.photo_quality || "Da verificare"),
+      needs_more_photos: Boolean(value.needs_more_photos),
+      caution: String(value.caution || "Conferma sempre dal vivo prima di preventivare."),
+      explanation: String(value.explanation || "Nessun dettaglio disponibile."),
+      recommended_photo: String(value.recommended_photo || "Scatta una foto ravvicinata con luce radente.") ,
+      analyzedAt: value.analyzedAt || new Date().toISOString()
+    };
+  }
+
+  function renderAiResult(analysis) {
+    const holder = $("aiResult");
+    const data = safeAnalysis(analysis);
+    if (!data) {
+      holder.className = "ai-result hidden";
+      holder.innerHTML = "";
+      return;
+    }
+
+    holder.className = "ai-result";
+    const range = data.dent_count_min === data.dent_count_max
+      ? `${data.dent_count_min}`
+      : `${data.dent_count_min}–${data.dent_count_max}`;
+    const more = data.needs_more_photos ? `<p><b>Foto consigliata:</b> ${esc(data.recommended_photo)}</p>` : "";
+    holder.innerHTML = `
+      <span class="ai-status">Assistente IA · pre-analisi</span>
+      <h4>${esc(data.verdict)}</h4>
+      <div class="ai-result-grid">
+        <div><span>Bolli stimati</span><strong>${esc(range)}</strong></div>
+        <div><span>Confidenza</span><strong>${esc(data.confidence)}%</strong></div>
+        <div><span>Grandezza</span><strong>${esc(aiLabel(data.size))}</strong></div>
+        <div><span>Profondità</span><strong>${esc(aiLabel(data.depth))}</strong></div>
+        <div><span>Vernice</span><strong>${esc(aiLabel(data.paint))}</strong></div>
+        <div><span>Qualità foto</span><strong>${esc(data.photo_quality)}</strong></div>
+      </div>
+      <p><b>Zona suggerita:</b> ${esc(data.panel_suggestion)}</p>
+      <p>${esc(data.explanation)}</p>
+      <p><b>Attenzione:</b> ${esc(data.caution)}</p>
+      ${more}
+      <div class="ai-result-actions"><button type="button" id="applyAiSuggestion">Applica suggerimento</button></div>`;
+  }
+
+  async function blobToAiDataUrl(blob) {
+    const image = await imageFromBlob(blob);
+    const maxSide = 1600;
+    const largest = Math.max(image.naturalWidth, image.naturalHeight);
+    const scale = largest > maxSide ? maxSide / largest : 1;
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    context.drawImage(image, 0, 0, width, height);
+    return canvas.toDataURL("image/jpeg", .84);
+  }
+
+  function setAiLoading(isLoading, text = "") {
+    const button = $("analyzePointAi");
+    button.disabled = isLoading;
+    button.textContent = isLoading ? "Analisi IA…" : "Analizza con IA";
+    if (!isLoading) return;
+    const holder = $("aiResult");
+    holder.className = "ai-result loading";
+    holder.innerHTML = `<span class="ai-status">Assistente IA</span><h4>${esc(text || "Sto leggendo le foto…")}</h4><p>Invio massimo tre immagini della zona. Il risultato va sempre controllato da te.</p>`;
+  }
+
+  async function analyzeCurrentPointWithAi() {
+    const point = editingPoint();
+    if (!point) return;
+    const endpoint = String(window.DENTVISION_AI_ENDPOINT || "").trim();
+    if (!endpoint) {
+      const holder = $("aiResult");
+      holder.className = "ai-result error";
+      holder.innerHTML = "<h4>IA non configurata</h4><p>Questa copia non ha un endpoint sicuro attivo. Non inserire chiavi API nel browser.</p>";
+      return;
+    }
+    if (!activePointPhotos.length) {
+      alert("Aggiungi almeno una foto della zona prima dell’analisi IA.");
+      return;
+    }
+
+    setAiLoading(true, "Preparo le foto della zona…");
+    try {
+      const selected = activePointPhotos.slice(0, 3);
+      const images = [];
+      for (const photo of selected) images.push(await blobToAiDataUrl(photo.blob));
+
+      setAiLoading(true, "Analisi visiva in corso…");
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          images,
+          context: {
+            carModel: $("carModel").value.trim().slice(0, 100),
+            panel: $("pointPanel").value,
+            zone: $("pointZone").value.trim().slice(0, 120),
+            operatorNote: $("pointNote").value.trim().slice(0, 500)
+          }
+        })
+      });
+
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || `Errore server ${response.status}`);
+      const analysis = safeAnalysis(body.analysis);
+      if (!analysis) throw new Error("Risposta IA non valida.");
+      point.aiAnalysis = analysis;
+      renderAiResult(analysis);
+      scheduleDraft();
+    } catch (error) {
+      console.error(error);
+      const raw = String(error?.message || "Errore sconosciuto");
+      const message = raw.includes("404")
+        ? "La funzione IA non è presente su questo deploy. Serve pubblicare la v2.1 con Netlify Functions attive."
+        : raw;
+      const holder = $("aiResult");
+      holder.className = "ai-result error";
+      holder.innerHTML = `<h4>Analisi non disponibile</h4><p>${esc(message)}</p><p class="small">Le foto restano nella pratica e puoi continuare a lavorare manualmente.</p>`;
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  function applyAiSuggestion() {
+    const point = editingPoint();
+    const analysis = safeAnalysis(point?.aiAnalysis);
+    if (!point || !analysis) return;
+
+    const allowedPanels = [...$("pointPanel").options].map((option) => option.value);
+    if (allowedPanels.includes(analysis.panel_suggestion)) $("pointPanel").value = analysis.panel_suggestion;
+    $("pointDents").value = Math.max(1, analysis.suggested_dents);
+    if (["piccola", "media", "grande"].includes(analysis.size)) $("pointSize").value = analysis.size;
+    if (["lieve", "media", "forte"].includes(analysis.depth)) $("pointDepth").value = analysis.depth;
+    if (["no", "si"].includes(analysis.paint)) $("pointPaint").value = analysis.paint;
+
+    const note = `Pre-analisi IA: ${analysis.dent_count_min}–${analysis.dent_count_max} bolli, confidenza ${analysis.confidence}%. ${analysis.caution}`;
+    const current = $("pointNote").value.trim();
+    if (!current.includes("Pre-analisi IA:")) $("pointNote").value = current ? `${current}\n${note}` : note;
+    alert("Suggerimento IA riportato nei campi. Controllalo e premi ‘Salva dettagli’ per confermarlo.");
   }
 
   // ---------- Motore 3D ----------
@@ -1365,6 +1552,10 @@ ${form.caseNotes || "Nessuna"}`;
 
     $("clearPointPhotos").addEventListener("click", () => void clearCurrentPointPhotos());
     $("checkPointPhotos").addEventListener("click", () => void checkCurrentPointPhotos());
+    $("analyzePointAi").addEventListener("click", () => void analyzeCurrentPointWithAi());
+    $("aiResult").addEventListener("click", (event) => {
+      if (event.target.closest("#applyAiSuggestion")) applyAiSuggestion();
+    });
 
     $("calculateQuote").addEventListener("click", () => renderQuote(true));
     $("useZonesTotal").addEventListener("click", () => {

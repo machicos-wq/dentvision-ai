@@ -1,8 +1,8 @@
 {
   "name": "DentVision AI",
   "short_name": "DentVision",
-  "description": "Gestione completa pratiche PDR con modello 3D, foto per zona e preventivi",
-  "start_url": "./?v=200",
+  "description": "Gestione PDR con modello 3D e assistente IA per foto zona",
+  "start_url": "./?v=211",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
