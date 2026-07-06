@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
-  <meta name="description" content="DentVision AI - preventivi PDR con modello 3D reale e schede danno">
-  <title>DentVision AI v1.8.1</title>
-  <link rel="manifest" href="manifest.json?v=181">
-  <link rel="stylesheet" href="style.css?v=181">
+  <meta name="description" content="DentVision AI - preventivi PDR con modello 3D, schede danno e foto per zona">
+  <title>DentVision AI v1.8.2</title>
+  <link rel="manifest" href="manifest.json?v=182">
+  <link rel="stylesheet" href="style.css?v=182">
   <script type="module">
     (async () => {
       const sources = [
@@ -30,9 +30,9 @@
 <body>
   <main class="app">
     <header class="hero">
-      <span class="badge">DentVision AI · v1.8.1</span>
+      <span class="badge">DentVision AI · v1.8.2</span>
       <h1>Stima danni grandine</h1>
-      <p>Modello 3D reale con scheda, quantità e note per ogni punto danno.</p>
+      <p>Ogni punto 3D può avere bolli, note e foto specifiche della zona.</p>
     </header>
 
     <section class="card">
@@ -48,7 +48,7 @@
       <div class="section-head">
         <div>
           <h2>Mappa danni 3D</h2>
-          <p class="hint">Trascina per ruotare, usa due dita per zoomare. Un tocco crea un punto rosso e apre subito la sua scheda.</p>
+          <p class="hint">Trascina per ruotare, usa due dita per zoomare. Un tocco apre la scheda del danno: lì aggiungi quantità, note e foto di quella zona.</p>
         </div>
         <span id="threeStatus" class="status-pill warning">Caricamento modello…</span>
       </div>
@@ -90,23 +90,7 @@
         <button id="undoPoint" type="button" class="secondary">Togli ultimo punto</button>
         <button id="clearPoints" type="button" class="danger">Cancella punti</button>
       </div>
-      <p class="small">Il modello non ha i pannelli nominati internamente. Nella scheda puoi scegliere tu cofano, tetto, fiancata, baule o parafango e aggiungere una nota.</p>
-    </section>
-
-    <section class="card">
-      <h2>Foto del danno</h2>
-      <p class="hint">Usa <strong>Apri galleria</strong> per foto già presenti. Usa <strong>Scatta foto</strong> solo per aprire volutamente la fotocamera.</p>
-      <input id="galleryPhotos" class="visually-hidden-file" type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.gif" multiple>
-      <input id="cameraPhotos" class="visually-hidden-file" type="file" accept="image/*" capture="environment">
-      <div class="photo-actions">
-        <label for="galleryPhotos" class="file-button gallery-button">Apri galleria</label>
-        <label for="cameraPhotos" class="file-button camera-button">Scatta foto</label>
-        <button id="clearPhotos" type="button" class="secondary">Rimuovi foto</button>
-      </div>
-      <p id="photoHint" class="small">Nessuna foto selezionata.</p>
-      <div id="preview" class="preview"></div>
-      <div class="actions"><button id="checkPhotos" type="button" class="secondary">Controlla qualità foto</button></div>
-      <div id="photoCheck" class="photo-check hidden"></div>
+      <p class="small">Il modello non ha i pannelli nominati internamente. Nella scheda scegli tu cofano, tetto, fiancata, baule o parafango. Le foto rimangono salvate localmente nel browser di questo telefono.</p>
     </section>
 
     <section class="card">
@@ -151,7 +135,9 @@
           </div>
           <button id="closeDamageDialog" type="button" class="icon-close" aria-label="Chiudi">×</button>
         </div>
-        <p class="hint">Completa questa scheda. Il puntino rosso resta sul punto scelto.</p>
+
+        <p class="hint">Completa questa scheda. Il puntino rosso resta nel punto scelto e le foto vengono collegate solo a questo danno.</p>
+
         <div class="grid">
           <label>Pannello
             <select id="pointPanel">
@@ -179,7 +165,32 @@
             <select id="pointPaint"><option value="no">Integra / non sembra danneggiata</option><option value="si">Danneggiata</option></select>
           </label>
         </div>
+
         <label>Nota del levabolli<textarea id="pointNote" rows="4" placeholder="Es. nervatura, bordo porta, accesso difficile, grandine vecchia..."></textarea></label>
+
+        <section class="point-photos">
+          <div class="point-photos-head">
+            <div>
+              <h3>Foto di questo danno</h3>
+              <p id="pointPhotoHint" class="small">Nessuna foto collegata a questo punto.</p>
+            </div>
+            <span id="pointPhotoBadge" class="photo-badge">0 foto</span>
+          </div>
+
+          <input id="pointGalleryPhotos" class="visually-hidden-file" type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.gif" multiple>
+          <input id="pointCameraPhotos" class="visually-hidden-file" type="file" accept="image/*" capture="environment">
+
+          <div class="photo-actions">
+            <label for="pointGalleryPhotos" class="file-button gallery-button">Apri galleria</label>
+            <label for="pointCameraPhotos" class="file-button camera-button">Scatta foto</label>
+            <button id="checkPointPhotos" type="button" class="secondary">Controlla foto</button>
+            <button id="clearPointPhotos" type="button" class="danger-mini">Cancella foto</button>
+          </div>
+
+          <div id="pointPhotoPreview" class="preview point-photo-preview"></div>
+          <div id="pointPhotoCheck" class="photo-check hidden"></div>
+        </section>
+
         <div class="actions dialog-actions">
           <button id="cancelPointEdit" type="button" class="secondary">Annulla punto</button>
           <button id="savePointEdit" type="button">Salva dettagli</button>
@@ -187,7 +198,7 @@
       </div>
     </dialog>
   </main>
-  <script src="ai-config.js?v=181"></script>
-  <script src="app.js?v=181" defer></script>
+  <script src="ai-config.js?v=182"></script>
+  <script src="app.js?v=182" defer></script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 {
   "name": "DentVision AI",
   "short_name": "DentVision",
-  "description": "Preventivi PDR con modello 3D e schede danno dettagliate",
-  "start_url": "./?v=181",
+  "description": "Preventivi PDR con modello 3D e foto specifiche per ogni danno",
+  "start_url": "./?v=182",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
