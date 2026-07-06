@@ -36,3 +36,4 @@ Le foto non sono ancora esportate in PDF e non sono analizzate da IA. Questa è 
 
 ## Commit
 DentVision AI v1.8.2 foto per singolo danno
+Retry pubblicazione foto per danno v1.8.2
