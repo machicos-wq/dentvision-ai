@@ -1,8 +1,8 @@
 {
-  "name": "DentVision AI",
+  "name": "DentVision AI v2.1.2 Locale gratuita",
   "short_name": "DentVision",
-  "description": "Gestione PDR con modello 3D e assistente IA per foto zona",
-  "start_url": "./?v=211",
+  "description": "Gestione danni grandine PDR con analisi locale gratuita senza API",
+  "start_url": "./index.html?v=2125",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",

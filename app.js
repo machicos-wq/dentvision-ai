@@ -1,7 +1,7 @@
-// DentVision AI v2.1.1 Assistente IA
+// DentVision AI v2.1.2 Locale gratuita
 // Gestione pratica PDR completa: modello 3D, zone, foto, preventivo, archivio, PDF e backup.
 // Le foto restano in IndexedDB, localmente sul browser di questo telefono.
-// L’analisi visiva passa solo da una Netlify Function: nessuna chiave API viene salvata nel browser.
+// Analisi locale gratuita: nessuna API, nessuna chiave, nessun costo.
 (() => {
   "use strict";
 
@@ -682,7 +682,90 @@
     box.innerHTML = `<strong>Controllo foto zona: ${score}/100</strong><br><span class="small">${issues.length ? issues.join(" · ") : "Qualità tecnica buona per questa zona."}</span>`;
   }
 
-  // ---------- Analisi IA foto ----------
+  async function calculateLocalPhotoQuality(photos) {
+    let weak = 0;
+    let low = 0;
+
+    for (const photo of photos) {
+      try {
+        const image = await imageFromBlob(photo.blob);
+
+        if (image.naturalWidth < 900 || image.naturalHeight < 600) low++;
+
+        const canvas = document.createElement("canvas");
+        const width = Math.min(150, image.naturalWidth);
+        const height = Math.max(1, Math.round(image.naturalHeight * width / image.naturalWidth));
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        context.drawImage(image, 0, 0, width, height);
+
+        const data = context.getImageData(0, 0, width, height).data;
+        let sum = 0;
+        let sumSq = 0;
+
+        for (let i = 0; i < data.length; i += 4) {
+          const brightness = .2126 * data[i] + .7152 * data[i + 1] + .0722 * data[i + 2];
+          sum += brightness;
+          sumSq += brightness * brightness;
+        }
+
+        const total = data.length / 4;
+        const mean = sum / total;
+        const contrast = Math.sqrt(Math.max(0, sumSq / total - mean * mean));
+
+        if (mean < 55 || mean > 205 || contrast < 20) weak++;
+      } catch {
+        weak++;
+      }
+    }
+
+    const score = Math.max(0, 100 - (photos.length < 3 ? 30 : 0) - weak * 18 - low * 10);
+    return { score, weak, low };
+  }
+
+  function buildLocalSuggestion(point, quality) {
+    const dents = Math.max(1, Math.round(Number($("pointDents").value || point.dents) || 1));
+    const size = $("pointSize").value || point.size || "piccola";
+    const depth = $("pointDepth").value || point.depth || "lieve";
+    const paint = $("pointPaint").value || point.paint || "no";
+    const panel = $("pointPanel").value || point.panel || "Da definire";
+
+    const spread = dents <= 5 ? 2 : dents <= 30 ? 5 : dents <= 100 ? 15 : 30;
+    const min = Math.max(1, dents - spread);
+    const max = Math.max(min, dents + spread);
+
+    const needsMore = quality.score < 70 || activePointPhotos.length < 3;
+    const confidence = Math.max(10, Math.min(72, Math.round(quality.score * 0.62 + (activePointPhotos.length >= 3 ? 10 : 0))));
+
+    const issues = [];
+    if (activePointPhotos.length < 3) issues.push("servono almeno 3 foto della stessa zona");
+    if (quality.weak) issues.push(`${quality.weak} foto con luce o contrasto debole`);
+    if (quality.low) issues.push(`${quality.low} foto poco definite`);
+
+    return {
+      verdict: needsMore ? "Foto da migliorare prima di fidarsi della stima" : "Foto tecnicamente utilizzabili per una valutazione manuale",
+      panel_suggestion: panel,
+      damage_presence: activePointPhotos.length ? "possible" : "none_visible",
+      dent_count_min: min,
+      dent_count_max: max,
+      suggested_dents: dents,
+      size,
+      depth,
+      paint,
+      confidence,
+      photo_quality: `${quality.score}/100${issues.length ? " · " + issues.join(" · ") : ""}`,
+      needs_more_photos: needsMore,
+      caution: "Analisi gratuita locale: non vede davvero i bolli come un modello IA. Usa i dati inseriti da te e controlla solo la qualità tecnica delle foto.",
+      explanation: "Questa modalità non usa API a pagamento e non invia immagini fuori dal telefono. Il numero bolli resta quello che hai indicato nella scheda.",
+      recommended_photo: "Per lavorare meglio: una foto panoramica, una con luce radente e una ravvicinata sul riflesso della zona.",
+      analyzedAt: new Date().toISOString()
+    };
+  }
+
+
+  // ---------- Analisi locale gratuita foto ----------
 
   function aiLabel(value, fallback = "Da valutare") {
     const labels = {
@@ -742,7 +825,7 @@
       : `${data.dent_count_min}–${data.dent_count_max}`;
     const more = data.needs_more_photos ? `<p><b>Foto consigliata:</b> ${esc(data.recommended_photo)}</p>` : "";
     holder.innerHTML = `
-      <span class="ai-status">Assistente IA · pre-analisi</span>
+      <span class="ai-status">Assistente locale · gratuito</span>
       <h4>${esc(data.verdict)}</h4>
       <div class="ai-result-grid">
         <div><span>Bolli stimati</span><strong>${esc(range)}</strong></div>
@@ -777,65 +860,36 @@
   function setAiLoading(isLoading, text = "") {
     const button = $("analyzePointAi");
     button.disabled = isLoading;
-    button.textContent = isLoading ? "Analisi IA…" : "Analizza con IA";
+    button.textContent = isLoading ? "Analisi locale…" : "Analisi locale gratuita";
     if (!isLoading) return;
     const holder = $("aiResult");
     holder.className = "ai-result loading";
-    holder.innerHTML = `<span class="ai-status">Assistente IA</span><h4>${esc(text || "Sto leggendo le foto…")}</h4><p>Invio massimo tre immagini della zona. Il risultato va sempre controllato da te.</p>`;
+    holder.innerHTML = `<span class="ai-status">Assistente locale gratuito</span><h4>${esc(text || "Controllo le foto…")}</h4><p>Le foto restano sul telefono. Il risultato non conta davvero i bolli: ti aiuta a valutare qualità e coerenza della scheda.</p>`;
   }
 
   async function analyzeCurrentPointWithAi() {
     const point = editingPoint();
     if (!point) return;
-    const endpoint = String(window.DENTVISION_AI_ENDPOINT || "").trim();
-    if (!endpoint) {
-      const holder = $("aiResult");
-      holder.className = "ai-result error";
-      holder.innerHTML = "<h4>IA non configurata</h4><p>Questa copia non ha un endpoint sicuro attivo. Non inserire chiavi API nel browser.</p>";
-      return;
-    }
+
     if (!activePointPhotos.length) {
-      alert("Aggiungi almeno una foto della zona prima dell’analisi IA.");
+      alert("Aggiungi almeno una foto della zona prima dell’analisi locale.");
       return;
     }
 
-    setAiLoading(true, "Preparo le foto della zona…");
+    setAiLoading(true, "Controllo qualità foto e coerenza della scheda…");
+
     try {
-      const selected = activePointPhotos.slice(0, 3);
-      const images = [];
-      for (const photo of selected) images.push(await blobToAiDataUrl(photo.blob));
+      const quality = await calculateLocalPhotoQuality(activePointPhotos.slice(0, MAX_PHOTOS_PER_POINT));
+      const analysis = safeAnalysis(buildLocalSuggestion(point, quality));
 
-      setAiLoading(true, "Analisi visiva in corso…");
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          images,
-          context: {
-            carModel: $("carModel").value.trim().slice(0, 100),
-            panel: $("pointPanel").value,
-            zone: $("pointZone").value.trim().slice(0, 120),
-            operatorNote: $("pointNote").value.trim().slice(0, 500)
-          }
-        })
-      });
-
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body.error || `Errore server ${response.status}`);
-      const analysis = safeAnalysis(body.analysis);
-      if (!analysis) throw new Error("Risposta IA non valida.");
       point.aiAnalysis = analysis;
       renderAiResult(analysis);
       scheduleDraft();
     } catch (error) {
       console.error(error);
-      const raw = String(error?.message || "Errore sconosciuto");
-      const message = raw.includes("404")
-        ? "La funzione IA non è presente su questo deploy. Serve pubblicare la v2.1 con Netlify Functions attive."
-        : raw;
       const holder = $("aiResult");
       holder.className = "ai-result error";
-      holder.innerHTML = `<h4>Analisi non disponibile</h4><p>${esc(message)}</p><p class="small">Le foto restano nella pratica e puoi continuare a lavorare manualmente.</p>`;
+      holder.innerHTML = `<h4>Analisi locale non riuscita</h4><p>${esc(error?.message || "Errore sconosciuto")}</p><p class="small">Puoi comunque continuare manualmente con foto, note e preventivo.</p>`;
     } finally {
       setAiLoading(false);
     }
@@ -853,10 +907,10 @@
     if (["lieve", "media", "forte"].includes(analysis.depth)) $("pointDepth").value = analysis.depth;
     if (["no", "si"].includes(analysis.paint)) $("pointPaint").value = analysis.paint;
 
-    const note = `Pre-analisi IA: ${analysis.dent_count_min}–${analysis.dent_count_max} bolli, confidenza ${analysis.confidence}%. ${analysis.caution}`;
+    const note = `Pre-analisi locale: ${analysis.dent_count_min}–${analysis.dent_count_max} bolli, confidenza ${analysis.confidence}%. ${analysis.caution}`;
     const current = $("pointNote").value.trim();
-    if (!current.includes("Pre-analisi IA:")) $("pointNote").value = current ? `${current}\n${note}` : note;
-    alert("Suggerimento IA riportato nei campi. Controllalo e premi ‘Salva dettagli’ per confermarlo.");
+    if (!current.includes("Pre-analisi locale:")) $("pointNote").value = current ? `${current}\n${note}` : note;
+    alert("Suggerimento locale riportato nei campi. Controllalo e premi ‘Salva dettagli’ per confermarlo.");
   }
 
   // ---------- Motore 3D ----------

@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
   <meta name="description" content="DentVision AI - gestione completa pratiche PDR con auto 3D, foto e preventivi">
-  <title>DentVision AI v2.1.1</title>
-  <link rel="manifest" href="manifest.json?v=211">
-  <link rel="stylesheet" href="style.css?v=211">
+  <title>DentVision AI v2.1.2 Locale gratuita</title>
+  <link rel="manifest" href="manifest.json?v=212">
+  <link rel="stylesheet" href="style.css?v=212">
   <script type="module">
     (async () => {
       const sources = [
@@ -32,7 +32,7 @@
     <header class="hero">
       <div class="hero-top">
         <div>
-          <span class="badge">DentVision AI · v2.1.1 Assistente IA</span>
+          <span class="badge">DentVision AI · v2.1.2 Locale gratuita</span>
           <h1>Gestione danni grandine</h1>
           <p>Pratica, auto 3D, foto per zona, preventivo, archivio e report professionale in un unico flusso.</p>
         </div>
@@ -313,7 +313,7 @@
     </section>
 
     <section class="honesty-note">
-      <strong>Nota IA:</strong> questa v2.1 può chiedere a un modello visivo un parere preliminare sulle foto della singola zona. Il conteggio e il preventivo restano sempre da confermare dal levabolli: una foto non sostituisce un sopralluogo.
+      <strong>Nota:</strong> questa versione usa analisi locale gratuita: non richiede API, non costa nulla e non invia foto a server esterni. Il conteggio e il preventivo restano sempre da confermare dal levabolli.
     </section>
 
     <dialog id="damageDialog" class="damage-dialog" aria-labelledby="damageDialogTitle">
@@ -375,11 +375,11 @@
             <label for="pointGalleryPhotos" class="file-button gallery-button">Apri galleria</label>
             <label for="pointCameraPhotos" class="file-button camera-button">Scatta foto</label>
             <button id="checkPointPhotos" type="button" class="secondary">Controlla foto</button>
-            <button id="analyzePointAi" type="button" class="ai-button">Analizza con IA</button>
+            <button id="analyzePointAi" type="button" class="ai-button">Analisi locale gratuita</button>
             <button id="clearPointPhotos" type="button" class="danger-mini">Cancella foto</button>
           </div>
 
-          <p class="ai-privacy-note">L’analisi IA invia fino a 3 foto di questa zona al server sicuro configurato. Evita volti, documenti e targhe non necessari. Il risultato è un suggerimento, non una diagnosi certa.</p>
+          <p class="ai-privacy-note">Analisi gratuita locale: le foto non vengono inviate a server esterni. Controlla qualità foto e compila un suggerimento prudente usando i dati della scheda.</p>
           <div id="pointPhotoPreview" class="preview point-photo-preview"></div>
           <div id="pointPhotoCheck" class="photo-check hidden"></div>
           <div id="aiResult" class="ai-result hidden" aria-live="polite"></div>
@@ -392,7 +392,7 @@
       </div>
     </dialog>
   </main>
-  <script src="ai-config.js?v=210"></script>
-  <script src="app.js?v=210" defer></script>
+  <script src="ai-config.js?v=212"></script>
+  <script src="app.js?v=212" defer></script>
 </body>
 </html>
