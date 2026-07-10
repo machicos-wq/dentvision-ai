@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
   <meta name="description" content="DentVision AI v4 - gestione pratiche PDR, analisi locale foto, mappa danni e preventivi.">
-  <title>DentVision AI v4.1 Fix Foto e 3D</title>
+  <title>DentVision AI v4.2 Zone 3D e Foto</title>
   <style>
 :root {
   color-scheme: dark;
@@ -386,6 +386,7 @@ input:focus, select:focus, textarea:focus { border-color: rgba(96, 165, 250, 0.9
 .difficulty-tag.hard { color: #fecaca; background: rgba(239,68,68,.13); }
 
 .model-shell {
+  position: relative;
   height: min(62vh, 520px);
   min-height: 330px;
   border: 1px solid var(--line);
@@ -403,6 +404,132 @@ model-viewer { width: 100%; height: 100%; }
   text-align: center;
 }
 model-viewer:not(:defined) .model-fallback { display: grid; }
+
+.car-markers {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.car-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,.9);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 1000;
+  box-shadow: 0 12px 30px rgba(0,0,0,.45);
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 5;
+}
+.car-marker.easy { background: var(--green); }
+.car-marker.medium { background: var(--yellow); color: #111827; }
+.car-marker.hard { background: var(--red); }
+.car-marker.standard { background: var(--blue); }
+.model-click-hint {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 3;
+  pointer-events: none;
+  border: 1px solid rgba(191,219,254,.26);
+  background: rgba(2,6,23,.58);
+  color: #dbeafe;
+  border-radius: 16px;
+  padding: 10px 12px;
+  font-size: .88rem;
+  font-weight: 800;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+.zones-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.zone-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255,255,255,.045);
+}
+.zone-row strong { display: block; }
+.zone-row span { display: block; color: var(--muted); font-size: .9rem; margin-top: 3px; }
+.zone-dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 1000;
+  background: var(--blue);
+}
+.zone-dot.easy { background: var(--green); }
+.zone-dot.medium { background: var(--yellow); color: #111827; }
+.zone-dot.hard { background: var(--red); }
+.zone-dialog {
+  width: min(720px, calc(100% - 22px));
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 0;
+  color: var(--text);
+  background: #0d182b;
+  box-shadow: var(--shadow);
+}
+.zone-dialog::backdrop { background: rgba(2,6,23,.74); backdrop-filter: blur(8px); }
+.dialog-inner { padding: clamp(18px, 4vw, 28px); }
+.dialog-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.dialog-top .btn { min-width: 48px; padding: 8px 12px; }
+.zone-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.zone-photo-card {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(2,6,23,.4);
+  min-height: 92px;
+}
+.zone-photo-card img {
+  width: 100%;
+  height: 92px;
+  object-fit: cover;
+  display: block;
+}
+.zone-photo-card button {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.25);
+  background: rgba(15,23,42,.86);
+  color: white;
+  font-weight: 900;
+}
+.zone-danger-row { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
 .view-controls { margin-top: 12px; }
 .panel-summary { margin-top: 14px; color: var(--muted); }
 
@@ -522,7 +649,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     <header class="hero">
       <div class="hero-grid">
         <div>
-          <div class="eyebrow">DentVision AI · v4.1 fix foto e 3D</div>
+          <div class="eyebrow">DentVision AI · v4.2 zone 3D e foto</div>
           <h1>Gestione danni grandine</h1>
           <p class="hero-text">Pratica cliente, analisi foto, mappa dei bolli, auto 3D, preventivo, archivio e report. Tutto locale, senza API obbligatorie.</p>
         </div>
@@ -703,6 +830,8 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
             loading="eager">
             <div id="modelFallback" class="model-fallback">Se il 3D non parte, il resto dell'app funziona comunque. Miracolo raro nell'informatica.</div>
           </model-viewer>
+          <div id="carMarkers" class="car-markers" aria-label="Zone danno segnate sul modello 3D"></div>
+          <div class="model-click-hint">Tocca una zona della macchina per creare una scheda con foto, pannello, quantità e difficoltà.</div>
         </div>
 
         <div class="view-controls">
@@ -715,6 +844,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
         </div>
 
         <div class="panel-summary" id="panelSummary">Nessun pannello analizzato.</div>
+        <div id="zonesList" class="zones-list"></div>
       </section>
 
       <section id="preventivo" class="card">
@@ -816,13 +946,76 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     </main>
   </div>
 
+  <dialog id="zoneDialog" class="zone-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <div>
+          <span class="section-kicker">Zona 3D</span>
+          <h2 id="zoneDialogTitle">Dettagli zona</h2>
+          <p class="hint">Qui colleghi le foto direttamente al punto selezionato sulla macchina. Finalmente il modello 3D fa qualcosa di utile invece di posare come una macchinina da vetrina.</p>
+        </div>
+        <button id="zoneClose" type="button" class="btn ghost" aria-label="Chiudi">×</button>
+      </div>
+
+      <div class="grid two">
+        <label>Pannello
+          <select id="zonePanel">
+            <option value="Da definire">Da definire</option>
+            <option value="Cofano">Cofano</option>
+            <option value="Tetto">Tetto</option>
+            <option value="Baule">Baule</option>
+            <option value="Fiancata sinistra">Fiancata sinistra</option>
+            <option value="Fiancata destra">Fiancata destra</option>
+            <option value="Porta anteriore sinistra">Porta anteriore sinistra</option>
+            <option value="Porta anteriore destra">Porta anteriore destra</option>
+            <option value="Porta posteriore sinistra">Porta posteriore sinistra</option>
+            <option value="Porta posteriore destra">Porta posteriore destra</option>
+            <option value="Parafango anteriore sinistro">Parafango anteriore sinistro</option>
+            <option value="Parafango anteriore destro">Parafango anteriore destro</option>
+            <option value="Parafango posteriore sinistro">Parafango posteriore sinistro</option>
+            <option value="Parafango posteriore destro">Parafango posteriore destro</option>
+            <option value="Altro">Altro</option>
+          </select>
+        </label>
+        <label>Bolli stimati nella zona<input id="zoneDents" type="number" min="1" step="1" value="1" inputmode="numeric"></label>
+        <label>Difficoltà
+          <select id="zoneDifficulty">
+            <option value="easy">Facile</option>
+            <option value="medium">Media</option>
+            <option value="hard">Difficile</option>
+          </select>
+        </label>
+        <label>Riferimento zona<input id="zoneReference" placeholder="Es. vicino nervatura, centro porta, bordo cofano"></label>
+      </div>
+
+      <label>Nota tecnica<textarea id="zoneNote" rows="3" placeholder="Accesso, leva consigliata, rischio vernice, colla o spinta da dietro..."></textarea></label>
+
+      <div class="real-upload-box compact-top">
+        <strong>Foto collegate alla zona</strong>
+        <p class="small">Puoi scattare foto o prenderle dalla galleria. Verranno salvate dentro questa pratica e collegate al punto 3D.</p>
+        <label>Scatta foto zona
+          <input id="zoneCameraInput" type="file" accept="image/*" capture="environment" multiple>
+        </label>
+        <label>Scegli foto zona dalla galleria
+          <input id="zonePhotoInput" type="file" accept="image/*" multiple>
+        </label>
+        <div id="zonePhotosPreview" class="zone-photo-grid"></div>
+      </div>
+
+      <div class="zone-danger-row">
+        <button id="zoneDelete" type="button" class="btn danger">Elimina zona</button>
+        <button id="zoneSave" type="button" class="btn primary">Salva zona</button>
+      </div>
+    </div>
+  </dialog>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script>
 (() => {
   "use strict";
 
-  const VERSION = "4.0.0";
+  const VERSION = "4.2.0";
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -1208,7 +1401,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
 
   const STORAGE_DRAFT = "dentvision_v4_draft";
   const STORAGE_ARCHIVE = "dentvision_v4_archive";
-  const VERSION = "4.0.0";
+  const VERSION = "4.2.0";
 
   const $ = (id) => document.getElementById(id);
   const dom = {};
@@ -1217,7 +1410,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     "clientName", "phone", "email", "carModel", "plate", "city", "status", "priority", "eventDate", "appointment", "insurer", "claimCode", "nextAction",
     "photoInput", "cameraInput", "analyzePhoto", "clearDetections", "sensitivity", "sensitivityText", "panelWidthCm", "activePanel", "engineStatus",
     "activePhotoName", "photoDentCount", "photoQuality", "photoCanvas", "canvasHint", "downloadMarkedPhoto", "detectionsList", "resultsNote",
-    "threeStatus", "car3d", "panelSummary", "manualDents", "globalDifficulty", "paintDamage", "finalPrice", "calculateQuote", "copySummary", "shareWhatsApp", "printReport", "quoteBox", "suggestedPrice", "estimatedHours", "quoteDents", "quoteBreakdown",
+    "threeStatus", "car3d", "carMarkers", "panelSummary", "zonesList", "zoneDialog", "zoneDialogTitle", "zonePanel", "zoneDents", "zoneDifficulty", "zoneReference", "zoneNote", "zoneCameraInput", "zonePhotoInput", "zonePhotosPreview", "zoneClose", "zoneSave", "zoneDelete", "manualDents", "globalDifficulty", "paintDamage", "finalPrice", "calculateQuote", "copySummary", "shareWhatsApp", "printReport", "quoteBox", "suggestedPrice", "estimatedHours", "quoteDents", "quoteBreakdown",
     "caseNotes", "exportJson", "exportCsv", "importBackup", "search", "statusFilter", "archiveCount", "leads", "toast"
   ];
 
@@ -1243,6 +1436,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     nextAction: "",
     photos: [],
     activePhotoId: null,
+    zones: [],
     manualDents: 0,
     globalDifficulty: "standard",
     paintDamage: "no",
@@ -1254,6 +1448,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
   let state = emptyCase();
   let archive = [];
   let activeImage = null;
+  let activeZoneId = null;
   let isRestoring = false;
 
   function createCaseId() {
@@ -1303,6 +1498,14 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
       dataUrl: removeData ? "" : photo.dataUrl,
       thumbnail: photo.thumbnail || ""
     }));
+    copy.zones = (copy.zones || []).map((zone) => ({
+      ...zone,
+      photos: (zone.photos || []).map((photo) => ({
+        ...photo,
+        dataUrl: removeData ? "" : photo.dataUrl,
+        thumbnail: photo.thumbnail || photo.dataUrl || ""
+      }))
+    }));
     return copy;
   }
 
@@ -1310,6 +1513,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     const saved = safeParse(localStorage.getItem(STORAGE_DRAFT), null);
     if (saved && saved.caseId) {
       state = { ...emptyCase(), ...saved };
+      state.zones = state.zones || [];
     }
   }
 
@@ -1349,21 +1553,47 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     return state.photos.find((photo) => photo.id === state.activePhotoId) || state.photos[0] || null;
   }
 
+  function zoneDentsTotal() {
+    return (state.zones || []).reduce((sum, zone) => sum + Math.max(1, Number(zone.dents || 1)), 0);
+  }
+
+  function totalAttachedPhotos() {
+    const zonePhotos = (state.zones || []).reduce((sum, zone) => sum + (zone.photos?.length || 0), 0);
+    return state.photos.length + zonePhotos;
+  }
+
   function totalDents() {
     const photoDents = state.photos.reduce((sum, photo) => sum + (photo.detections?.length || 0), 0);
-    return photoDents + Math.max(0, Number(state.manualDents || 0));
+    return photoDents + zoneDentsTotal() + Math.max(0, Number(state.manualDents || 0));
   }
 
   function hardDents() {
-    return state.photos.reduce((sum, photo) => sum + (photo.detections || []).filter((d) => d.difficulty === "hard").length, 0);
+    const photoHard = state.photos.reduce((sum, photo) => sum + (photo.detections || []).filter((d) => d.difficulty === "hard").length, 0);
+    const zoneHard = (state.zones || []).reduce((sum, zone) => sum + (zone.difficulty === "hard" ? Math.max(1, Number(zone.dents || 1)) : 0), 0);
+    return photoHard + zoneHard;
   }
 
   function mediumDents() {
-    return state.photos.reduce((sum, photo) => sum + (photo.detections || []).filter((d) => d.difficulty === "medium").length, 0);
+    const photoMedium = state.photos.reduce((sum, photo) => sum + (photo.detections || []).filter((d) => d.difficulty === "medium").length, 0);
+    const zoneMedium = (state.zones || []).reduce((sum, zone) => sum + (zone.difficulty === "medium" ? Math.max(1, Number(zone.dents || 1)) : 0), 0);
+    return photoMedium + zoneMedium;
   }
 
   function allDetections() {
-    return state.photos.flatMap((photo) => (photo.detections || []).map((d) => ({ ...d, photoName: photo.name })));
+    const photoDetections = state.photos.flatMap((photo) => (photo.detections || []).map((d) => ({ ...d, photoName: photo.name })));
+    const zoneDetections = (state.zones || []).map((zone) => ({
+      id: zone.id,
+      panel: zone.panel || "Da definire",
+      photoName: `Zona 3D${zone.photos?.length ? ` · ${zone.photos.length} foto` : ""}`,
+      diameterMm: "manuale",
+      depthScore: zone.reference || "—",
+      confidence: "manuale",
+      difficulty: zone.difficulty || "medium",
+      difficultyLabel: difficultyLabel(zone.difficulty),
+      dents: Math.max(1, Number(zone.dents || 1)),
+      fromZone: true
+    }));
+    return [...photoDetections, ...zoneDetections];
   }
 
   function estimateHours(count = totalDents()) {
@@ -1378,7 +1608,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     collectForm();
     dom.caseIdText.textContent = state.caseId;
     dom.dashStatus.textContent = state.status || "Nuova";
-    dom.dashPhotos.textContent = String(state.photos.length);
+    dom.dashPhotos.textContent = String(totalAttachedPhotos());
     dom.dashDents.textContent = String(totalDents());
     dom.dashHard.textContent = String(hardDents());
     const hours = estimateHours();
@@ -1395,6 +1625,8 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
 
     renderDetections();
     renderPanelSummary();
+    renderZonesList();
+    renderCarMarkers();
     renderArchive();
   }
 
@@ -1571,7 +1803,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
         <div class="detection-number ${dent.difficulty}">${index + 1}</div>
         <div>
           <div class="detection-title">${escapeHtml(dent.panel || "Da definire")} · ${escapeHtml(dent.photoName || "Foto")}</div>
-          <div class="detection-meta">Diametro stimato ${dent.diameterMm || "—"} mm · profondità ${dent.depthScore || "—"}/100 · confidenza ${dent.confidence || "—"}%</div>
+          <div class="detection-meta">${dent.fromZone ? `${dent.dents || 1} bolli manuali · riferimento ${escapeHtml(dent.depthScore || "—")} · foto collegate` : `Diametro stimato ${dent.diameterMm || "—"} mm · profondità ${dent.depthScore || "—"}/100 · confidenza ${dent.confidence || "—"}%`}</div>
         </div>
         <span class="difficulty-tag ${dent.difficulty}">${escapeHtml(dent.difficultyLabel || "Media")}</span>
       </article>
@@ -1587,12 +1819,160 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     const panels = new Map();
     for (const d of detections) {
       const key = d.panel || "Da definire";
-      panels.set(key, (panels.get(key) || 0) + 1);
+      const qty = Math.max(1, Number(d.dents || 1));
+      panels.set(key, (panels.get(key) || 0) + qty);
     }
     dom.panelSummary.innerHTML = Array.from(panels.entries())
       .sort((a, b) => b[1] - a[1])
       .map(([panel, count]) => `<strong>${escapeHtml(panel)}</strong>: ${count} bolli`)
       .join(" · ");
+  }
+
+  function difficultyLabel(value) {
+    return value === "easy" ? "Facile" : value === "hard" ? "Difficile" : "Media";
+  }
+
+  function activeZone() {
+    return (state.zones || []).find((zone) => zone.id === activeZoneId) || null;
+  }
+
+  function renderCarMarkers() {
+    if (!dom.carMarkers) return;
+    const zones = state.zones || [];
+    dom.carMarkers.innerHTML = zones.map((zone, index) => `
+      <button type="button" class="car-marker ${escapeHtml(zone.difficulty || "medium")}" data-zone-id="${escapeHtml(zone.id)}" style="left:${Number(zone.x || 50)}%;top:${Number(zone.y || 50)}%" title="Apri zona ${index + 1}">${index + 1}</button>
+    `).join("");
+  }
+
+  function renderZonesList() {
+    if (!dom.zonesList) return;
+    const zones = state.zones || [];
+    if (!zones.length) {
+      dom.zonesList.innerHTML = `<div class="mini-note">Tocca la macchina 3D per creare una zona danno e collegare le foto. Sì, ora il clic serve davvero.</div>`;
+      return;
+    }
+    dom.zonesList.innerHTML = zones.map((zone, index) => `
+      <article class="zone-row">
+        <div class="zone-dot ${escapeHtml(zone.difficulty || "medium")}">${index + 1}</div>
+        <div>
+          <strong>${escapeHtml(zone.panel || "Da definire")} · ${Math.max(1, Number(zone.dents || 1))} bolli</strong>
+          <span>${escapeHtml(zone.reference || "Nessun riferimento")} · ${difficultyLabel(zone.difficulty)} · ${zone.photos?.length || 0} foto</span>
+        </div>
+        <button class="btn ghost small-btn" type="button" data-open-zone="${escapeHtml(zone.id)}">Apri</button>
+      </article>
+    `).join("");
+  }
+
+  function guessPanelFromTap(x, y) {
+    if (y < 34) return "Tetto";
+    if (x < 25) return "Cofano";
+    if (x > 76) return "Baule";
+    if (y > 66) return "Fiancata";
+    return "Fiancata destra";
+  }
+
+  function createZoneAt(x, y) {
+    state.zones = state.zones || [];
+    const zone = {
+      id: crypto.randomUUID ? crypto.randomUUID() : `zone-${Date.now()}`,
+      x: Math.max(3, Math.min(97, x)),
+      y: Math.max(3, Math.min(97, y)),
+      panel: guessPanelFromTap(x, y),
+      dents: 1,
+      difficulty: "medium",
+      reference: "",
+      note: "",
+      photos: [],
+      createdAt: new Date().toISOString()
+    };
+    state.zones.push(zone);
+    activeZoneId = zone.id;
+    renderCarMarkers();
+    renderZonesList();
+    openZoneDialog(zone.id);
+    saveDraft();
+  }
+
+  function openZoneDialog(zoneId) {
+    const zone = (state.zones || []).find((item) => item.id === zoneId);
+    if (!zone) return;
+    activeZoneId = zone.id;
+    const index = (state.zones || []).findIndex((item) => item.id === zone.id) + 1;
+    dom.zoneDialogTitle.textContent = `Zona ${index}`;
+    dom.zonePanel.value = zone.panel || "Da definire";
+    dom.zoneDents.value = Math.max(1, Number(zone.dents || 1));
+    dom.zoneDifficulty.value = zone.difficulty || "medium";
+    dom.zoneReference.value = zone.reference || "";
+    dom.zoneNote.value = zone.note || "";
+    renderZonePhotos();
+    if (dom.zoneDialog?.showModal) dom.zoneDialog.showModal();
+    else dom.zoneDialog?.setAttribute("open", "open");
+  }
+
+  function saveZoneDialog() {
+    const zone = activeZone();
+    if (!zone) return;
+    zone.panel = dom.zonePanel.value || "Da definire";
+    zone.dents = Math.max(1, Number(dom.zoneDents.value || 1));
+    zone.difficulty = dom.zoneDifficulty.value || "medium";
+    zone.reference = dom.zoneReference.value || "";
+    zone.note = dom.zoneNote.value || "";
+    zone.updatedAt = new Date().toISOString();
+    saveDraft();
+    updateUI();
+    dom.zoneDialog?.close?.();
+    toast("Zona 3D salvata con foto e dettagli.");
+  }
+
+  function deleteActiveZone() {
+    const zone = activeZone();
+    if (!zone) return;
+    if (!confirm("Eliminare questa zona 3D e le foto collegate?")) return;
+    state.zones = (state.zones || []).filter((item) => item.id !== zone.id);
+    activeZoneId = null;
+    dom.zoneDialog?.close?.();
+    saveDraft();
+    updateUI();
+    toast("Zona eliminata.");
+  }
+
+  async function addZonePhotos(files) {
+    const zone = activeZone();
+    if (!zone || !files?.length) return;
+    zone.photos = zone.photos || [];
+    for (const file of Array.from(files).slice(0, 12)) {
+      if (!file.type || !file.type.startsWith("image/")) continue;
+      const dataUrl = await fileToDataUrl(file);
+      zone.photos.push({
+        id: crypto.randomUUID ? crypto.randomUUID() : `zphoto-${Date.now()}-${Math.random()}`,
+        name: file.name || "foto-zona.jpg",
+        type: file.type,
+        size: file.size,
+        dataUrl,
+        createdAt: new Date().toISOString()
+      });
+    }
+    dom.zoneCameraInput.value = "";
+    dom.zonePhotoInput.value = "";
+    renderZonePhotos();
+    saveDraft();
+    updateUI();
+    toast("Foto collegate alla zona 3D.");
+  }
+
+  function renderZonePhotos() {
+    const zone = activeZone();
+    if (!dom.zonePhotosPreview) return;
+    if (!zone?.photos?.length) {
+      dom.zonePhotosPreview.innerHTML = `<div class="mini-note">Nessuna foto collegata a questa zona.</div>`;
+      return;
+    }
+    dom.zonePhotosPreview.innerHTML = zone.photos.map((photo) => `
+      <div class="zone-photo-card">
+        <img src="${photo.dataUrl}" alt="${escapeHtml(photo.name || "Foto zona")}">
+        <button type="button" data-remove-zone-photo="${escapeHtml(photo.id)}" aria-label="Rimuovi foto">×</button>
+      </div>
+    `).join("");
   }
 
   function calculateQuote() {
@@ -1648,7 +2028,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
       `Città: ${state.city || "—"}`,
       `Stato: ${state.status || "Nuova"}`,
       `Bolli rilevati: ${totalDents()}`,
-      `Foto: ${state.photos.length}`,
+      `Foto: ${totalAttachedPhotos()}`,
       `Stima lavoro: ${formatNumber(estimateHours(), 1)} h`,
       `Preventivo: ${priceText}`,
       state.nextAction ? `Prossima azione: ${state.nextAction}` : "",
@@ -1719,13 +2099,15 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
       return;
     }
     dom.leads.innerHTML = items.map((item) => {
-      const count = (item.photos || []).reduce((sum, p) => sum + (p.detections?.length || 0), 0) + Number(item.manualDents || 0);
+      const zoneCount = (item.zones || []).reduce((sum, z) => sum + Math.max(1, Number(z.dents || 1)), 0);
+      const count = (item.photos || []).reduce((sum, p) => sum + (p.detections?.length || 0), 0) + zoneCount + Number(item.manualDents || 0);
+      const zonePhotos = (item.zones || []).reduce((sum, z) => sum + (z.photos?.length || 0), 0);
       const price = item.finalPrice || item.quote?.suggestedPrice || "";
       return `<article class="lead-row">
         <div>
           <strong>${escapeHtml(item.clientName || item.caseId)} · ${escapeHtml(item.carModel || "Veicolo")}</strong>
           <span>${escapeHtml(item.plate || "Nessuna targa")} · ${escapeHtml(item.city || "Località non indicata")} · ${escapeHtml(item.status || "Nuova")}</span>
-          <span>${count} bolli · ${item.photos?.length || 0} foto · ${price ? euro(price) : "prezzo da definire"}</span>
+          <span>${count} bolli · ${(item.photos?.length || 0) + zonePhotos} foto · ${(item.zones?.length || 0)} zone 3D · ${price ? euro(price) : "prezzo da definire"}</span>
         </div>
         <div class="lead-actions">
           <button class="btn ghost" type="button" data-load="${escapeHtml(item.caseId)}">Apri</button>
@@ -1739,7 +2121,9 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     const found = archive.find((item) => item.caseId === caseId);
     if (!found) return;
     state = { ...emptyCase(), ...structuredClone(found) };
+    state.zones = state.zones || [];
     activeImage = null;
+    activeZoneId = null;
     fillForm();
     drawActivePhoto();
     saveDraft();
@@ -1762,6 +2146,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     }
     state = emptyCase();
     activeImage = null;
+    activeZoneId = null;
     fillForm();
     const ctx = dom.photoCanvas.getContext("2d");
     ctx.clearRect(0, 0, dom.photoCanvas.width, dom.photoCanvas.height);
@@ -1806,6 +2191,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     }
     if (Array.isArray(payload.archive)) archive = payload.archive;
     if (payload.draft?.caseId) state = { ...emptyCase(), ...payload.draft };
+    state.zones = state.zones || [];
     persistArchive();
     fillForm();
     drawActivePhoto();
@@ -1834,6 +2220,29 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     setTimeout(() => {
       if (customElements.get("model-viewer") && dom.car3d) setOk();
     }, 1800);
+
+    const shell = dom.car3d?.closest(".model-shell");
+    let tapStart = null;
+    shell?.addEventListener("pointerdown", (event) => {
+      if (event.target.closest(".car-marker")) return;
+      tapStart = { x: event.clientX, y: event.clientY, t: Date.now() };
+    }, true);
+    shell?.addEventListener("pointerup", (event) => {
+      const marker = event.target.closest(".car-marker");
+      if (marker?.dataset.zoneId) {
+        openZoneDialog(marker.dataset.zoneId);
+        return;
+      }
+      if (!tapStart) return;
+      const moved = Math.hypot(event.clientX - tapStart.x, event.clientY - tapStart.y);
+      const elapsed = Date.now() - tapStart.t;
+      tapStart = null;
+      if (moved > 10 || elapsed > 650) return;
+      const rect = shell.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 100;
+      const y = ((event.clientY - rect.top) / rect.height) * 100;
+      createZoneAt(x, y);
+    }, true);
 
     document.querySelectorAll("[data-view]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -1881,6 +2290,24 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     dom.exportJson.addEventListener("click", exportJson);
     dom.exportCsv.addEventListener("click", exportCsv);
     dom.importBackup.addEventListener("change", (event) => importBackup(event.target.files?.[0]));
+    dom.zoneClose?.addEventListener("click", () => dom.zoneDialog?.close?.());
+    dom.zoneSave?.addEventListener("click", saveZoneDialog);
+    dom.zoneDelete?.addEventListener("click", deleteActiveZone);
+    dom.zoneCameraInput?.addEventListener("change", (event) => addZonePhotos(event.target.files));
+    dom.zonePhotoInput?.addEventListener("change", (event) => addZonePhotos(event.target.files));
+    dom.zonePhotosPreview?.addEventListener("click", (event) => {
+      const photoId = event.target.closest("[data-remove-zone-photo]")?.dataset.removeZonePhoto;
+      const zone = activeZone();
+      if (!photoId || !zone) return;
+      zone.photos = (zone.photos || []).filter((photo) => photo.id !== photoId);
+      renderZonePhotos();
+      saveDraft();
+      updateUI();
+    });
+    dom.zonesList?.addEventListener("click", (event) => {
+      const zoneId = event.target.closest("[data-open-zone]")?.dataset.openZone;
+      if (zoneId) openZoneDialog(zoneId);
+    });
     dom.search.addEventListener("input", renderArchive);
     dom.statusFilter.addEventListener("change", renderArchive);
 
@@ -1912,6 +2339,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
 
     loadArchive();
     loadDraft();
+    state.zones = state.zones || [];
     fillForm();
     bindEvents();
     setupModelViewer();

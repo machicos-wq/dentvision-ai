@@ -1,31 +1,13 @@
-# DentVision AI v2.1.2 – Locale gratuita
+# DentVision AI v4.2 - Zone 3D e Foto
 
-Versione senza API a pagamento.
+Versione a file unico. Carica solo `index.html` nel repository GitHub.
 
-## Cosa cambia
-- Non serve `OPENAI_API_KEY`.
-- Non usa OpenAI API.
-- Non costa nulla.
-- Non invia foto a server esterni.
-- Mantiene: pratiche, auto 3D, zone danno, foto, note, preventivo, archivio e report.
-- Il pulsante diventa: **Analisi locale gratuita**.
-
-## Limite
-Questa versione non conta davvero i bolli da sola. Controlla qualità foto e coerenza della scheda, ma il numero dei bolli resta quello inserito dal levabolli.
-
-## File da sostituire
-Carica questi file nella radice del repository GitHub:
-
-- index.html
-- app.js
-- ai-config.js
-- style.css
-- manifest.json
-- README.md
-- service-worker.js
-- icon.svg
-- generic_sedan_car.glb
+Novità:
+- Tocca la macchina 3D per creare una zona danno.
+- Ogni zona ha pannello, quantità bolli, difficoltà, riferimento, nota tecnica.
+- Ogni zona può avere foto collegate da fotocamera o galleria.
+- Le zone 3D entrano nel conteggio bolli, nella stima ore, nel preventivo, nell'archivio e nel backup.
+- La sezione foto principale resta per l'analisi automatica locale.
 
 Commit consigliato:
-
-`Carica DentVision AI v2.1.2 locale gratuita`
+DentVision AI v4.2 - zone 3D con foto collegate
