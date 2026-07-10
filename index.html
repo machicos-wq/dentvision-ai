@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
-  <meta name="description" content="DentVision AI v4 - gestione pratiche PDR, analisi locale foto, mappa danni e preventivi.">
-  <title>DentVision AI v4.3 Analisi PDR Professionale</title>
+  <meta name="description" content="DentVision AI v4.4 - gestione pratiche PDR, analisi locale foto, risultati ordinati, mappa danni e preventivi.">
+  <title>DentVision AI v4.4 Risultati ordinati</title>
   <style>
 :root {
   color-scheme: dark;
@@ -385,6 +385,80 @@ input:focus, select:focus, textarea:focus { border-color: rgba(96, 165, 250, 0.9
 .difficulty-tag.medium { color: #fde68a; background: rgba(245,158,11,.13); }
 .difficulty-tag.hard { color: #fecaca; background: rgba(239,68,68,.13); }
 
+.detection-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.detection-summary-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,.045);
+  padding: 14px;
+}
+.detection-summary-card span {
+  display: block;
+  color: var(--muted);
+  font-size: .85rem;
+  margin-bottom: 7px;
+}
+.detection-summary-card strong {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+.panel-summary-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.panel-summary-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.028));
+}
+.panel-summary-row strong { font-size: 1.02rem; }
+.panel-summary-row .panel-meta {
+  color: var(--muted);
+  font-size: .88rem;
+  margin-top: 4px;
+  line-height: 1.35;
+}
+.panel-badge {
+  border-radius: 999px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  font-weight: 900;
+  background: rgba(59,130,246,.16);
+  white-space: nowrap;
+}
+.details-panel {
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,.035);
+  overflow: hidden;
+}
+.details-panel summary {
+  cursor: pointer;
+  padding: 14px;
+  font-weight: 900;
+  color: var(--text);
+}
+.details-panel .detections-list {
+  padding: 0 12px 12px;
+}
+.details-panel .detection-row {
+  grid-template-columns: auto 1fr;
+  align-items: start;
+}
+.details-panel .difficulty-tag { justify-self: start; margin-top: 7px; display: inline-block; }
+
 .model-shell {
   position: relative;
   height: min(62vh, 520px);
@@ -693,6 +767,9 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
   .canvas-toolbar { display: grid; }
   #photoCanvas { max-height: 64vh; }
   .detection-row { grid-template-columns: auto 1fr; }
+  .detection-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .panel-summary-row { grid-template-columns: 1fr; }
+  .panel-badge { justify-self: start; }
   .difficulty-tag { grid-column: 1 / -1; width: fit-content; }
   .quote-box { grid-template-columns: 1fr; }
   .lead-row { grid-template-columns: 1fr; }
@@ -733,7 +810,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     <header class="hero">
       <div class="hero-grid">
         <div>
-          <div class="eyebrow">DentVision AI · v4.3 analisi PDR professionale</div>
+          <div class="eyebrow">DentVision AI · v4.4 risultati ordinati</div>
           <h1>Gestione danni grandine</h1>
           <p class="hero-text">Pratica cliente, analisi foto, mappa dei bolli, auto 3D, preventivo, archivio e report. Tutto locale, senza API obbligatorie.</p>
         </div>
@@ -1904,7 +1981,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
         sensitivity: dom.sensitivity.value,
         panelWidthCm: dom.panelWidthCm.value,
         panel: dom.activePanel.value,
-        maxDetections: 120
+        maxDetections: 70
       });
       active.detections = result.detections.map((dent) => ({
         ...dent,
@@ -1949,22 +2026,84 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
 
   function renderDetections() {
     const detections = allDetections();
-    dom.resultsNote.textContent = detections.length ? `${detections.length} rilevamenti totali nella pratica.` : "Nessun risultato.";
+    const qty = (dent) => dent.fromZone ? Math.max(1, Number(dent.dents || 1)) : 1;
+    const total = detections.reduce((sum, dent) => sum + qty(dent), 0);
+    dom.resultsNote.textContent = total ? `${total} bolli stimati · riepilogo compatto.` : "Nessun risultato.";
     if (!detections.length) {
       dom.detectionsList.innerHTML = `<div class="mini-note">Carica una foto e premi Analizza foto. Sconvolgente: il pulsante serve a fare la cosa scritta sul pulsante.</div>`;
       return;
     }
 
-    dom.detectionsList.innerHTML = detections.map((dent, index) => `
+    const counters = { easy: 0, medium: 0, hard: 0 };
+    const panels = new Map();
+    const photos = new Set();
+
+    for (const dent of detections) {
+      const amount = qty(dent);
+      const diff = ["easy", "medium", "hard"].includes(dent.difficulty) ? dent.difficulty : "medium";
+      counters[diff] += amount;
+      if (dent.photoName) photos.add(dent.photoName);
+      const panelName = dent.panel || "Da definire";
+      if (!panels.has(panelName)) {
+        panels.set(panelName, { total: 0, easy: 0, medium: 0, hard: 0, diameters: [], photos: new Set(), manualZones: 0 });
+      }
+      const item = panels.get(panelName);
+      item.total += amount;
+      item[diff] += amount;
+      if (dent.photoName) item.photos.add(dent.photoName);
+      if (dent.fromZone) item.manualZones += 1;
+      const diameter = Number(dent.diameterMm);
+      if (Number.isFinite(diameter)) item.diameters.push(diameter);
+    }
+
+    const panelRows = Array.from(panels.entries())
+      .sort((a, b) => b[1].total - a[1].total)
+      .map(([panel, item]) => {
+        const avgDiameter = item.diameters.length ? `${Math.round(item.diameters.reduce((a, b) => a + b, 0) / item.diameters.length)} mm medi` : "diametro manuale/da confermare";
+        const parts = [];
+        if (item.easy) parts.push(`${item.easy} facili`);
+        if (item.medium) parts.push(`${item.medium} medi`);
+        if (item.hard) parts.push(`${item.hard} difficili`);
+        const photoText = item.photos.size ? `${item.photos.size} foto` : "nessuna foto collegata";
+        const manualText = item.manualZones ? ` · ${item.manualZones} zone 3D` : "";
+        return `
+          <article class="panel-summary-row">
+            <div>
+              <strong>${escapeHtml(panel)}</strong>
+              <div class="panel-meta">${parts.join(" · ") || "difficoltà da confermare"} · ${avgDiameter} · ${photoText}${manualText}</div>
+            </div>
+            <span class="panel-badge">${item.total} bolli</span>
+          </article>
+        `;
+      }).join("");
+
+    const detailLimit = 25;
+    const detailRows = detections.slice(0, detailLimit).map((dent, index) => `
       <article class="detection-row">
         <div class="detection-number ${dent.difficulty}">${index + 1}</div>
         <div>
           <div class="detection-title">${escapeHtml(dent.panel || "Da definire")} · ${escapeHtml(dent.photoName || "Foto")}</div>
-          <div class="detection-meta">${dent.fromZone ? `${dent.dents || 1} bolli manuali · riferimento ${escapeHtml(dent.depthScore || "—")} · foto collegate` : `Diametro stimato ${dent.diameterMm || "—"} mm · profondità ${dent.depthScore || "—"}/100 · confidenza ${dent.confidence || "—"}%`}</div>
+          <div class="detection-meta">${dent.fromZone ? `${dent.dents || 1} bolli manuali · riferimento ${escapeHtml(dent.depthScore || "—")} · foto collegate` : `Diametro ${dent.diameterMm || "—"} mm · profondità ${dent.depthScore || "—"}/100 · confidenza ${dent.confidence || "—"}%`}</div>
+          <span class="difficulty-tag ${dent.difficulty}">${escapeHtml(dent.difficultyLabel || "Media")}</span>
         </div>
-        <span class="difficulty-tag ${dent.difficulty}">${escapeHtml(dent.difficultyLabel || "Media")}</span>
       </article>
     `).join("");
+
+    dom.detectionsList.innerHTML = `
+      <div class="detection-summary-grid">
+        <div class="detection-summary-card"><span>Totale stimato</span><strong>${total}</strong></div>
+        <div class="detection-summary-card"><span>Facili</span><strong>${counters.easy}</strong></div>
+        <div class="detection-summary-card"><span>Medi</span><strong>${counters.medium}</strong></div>
+        <div class="detection-summary-card"><span>Difficili</span><strong>${counters.hard}</strong></div>
+      </div>
+      <div class="mini-note">Niente più sfilza infinita: i singoli numeri restano sulla foto, sotto trovi il riepilogo utile per preventivo e lavoro.</div>
+      <div class="panel-summary-list">${panelRows}</div>
+      <details class="details-panel">
+        <summary>Dettaglio tecnico opzionale (${detections.length} rilevamenti)</summary>
+        <div class="detections-list">${detailRows}</div>
+        ${detections.length > detailLimit ? `<div class="mini-note" style="padding:0 14px 14px">Mostro solo i primi ${detailLimit}. Gli altri restano contati nel riepilogo e segnati sulla foto, perché leggere 86 schede è un rito punitivo, non un flusso professionale.</div>` : ""}
+      </details>
+    `;
   }
 
   function renderPanelSummary() {
