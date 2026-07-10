@@ -4,10 +4,479 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
-  <meta name="description" content="DentVision AI - gestione completa pratiche PDR con auto 3D, foto e preventivi">
-  <title>DentVision AI v2.1.2 Locale gratuita</title>
-  <link rel="manifest" href="manifest.json?v=212">
-  <link rel="stylesheet" href="style.css?v=212">
+  <meta name="description" content="DentVision AI v4 - gestione pratiche PDR, analisi locale foto, mappa danni e preventivi.">
+  <title>DentVision AI v4</title>
+  <style>
+:root {
+  color-scheme: dark;
+  --bg: #07101f;
+  --panel: #0e1a2f;
+  --panel-2: #13233d;
+  --card: rgba(18, 31, 54, 0.92);
+  --card-solid: #101c31;
+  --text: #f5f7fb;
+  --muted: #aeb9cc;
+  --soft: #72809a;
+  --line: rgba(255, 255, 255, 0.12);
+  --blue: #3b82f6;
+  --blue-2: #2563eb;
+  --green: #22c55e;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --violet: #8b5cf6;
+  --shadow: 0 26px 90px rgba(0, 0, 0, 0.36);
+  --radius: 24px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.22), transparent 38rem),
+    radial-gradient(circle at top right, rgba(139, 92, 246, 0.18), transparent 34rem),
+    linear-gradient(160deg, #050914 0%, var(--bg) 46%, #091426 100%);
+  line-height: 1.5;
+}
+
+button, input, select, textarea { font: inherit; }
+button, label, select { -webkit-tap-highlight-color: transparent; }
+
+.app-shell {
+  width: min(1180px, calc(100% - 28px));
+  margin: 0 auto;
+  padding: 20px 0 44px;
+}
+
+.hero {
+  border: 1px solid var(--line);
+  border-radius: 32px;
+  padding: clamp(22px, 4vw, 42px);
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(14, 26, 47, 0.92) 46%),
+    rgba(14, 26, 47, 0.94);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  position: relative;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  right: -90px;
+  top: -100px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.18);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 22px;
+  align-items: start;
+  position: relative;
+  z-index: 1;
+}
+
+.eyebrow, .section-kicker, .badge {
+  color: #bfdbfe;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.76rem;
+}
+
+h1, h2, h3, p { margin-top: 0; }
+h1 {
+  margin: 8px 0 12px;
+  font-size: clamp(2.45rem, 8vw, 5.8rem);
+  line-height: 0.94;
+  letter-spacing: -0.06em;
+}
+h2 { margin: 5px 0 8px; font-size: clamp(1.55rem, 4.2vw, 2.35rem); line-height: 1.03; letter-spacing: -0.035em; }
+h3 { margin: 0; font-size: 1.05rem; }
+
+.hero-text {
+  max-width: 760px;
+  color: var(--muted);
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
+  margin: 0;
+}
+
+.hero-actions, .actions, .view-controls, .photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.case-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.055);
+  color: var(--muted);
+  position: relative;
+  z-index: 1;
+}
+.case-strip b, .case-strip strong { color: var(--text); }
+
+.btn, .file-button {
+  border: 0;
+  border-radius: 16px;
+  padding: 13px 17px;
+  color: white;
+  font-weight: 800;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.12);
+  cursor: pointer;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: transform .16s ease, background .16s ease, opacity .16s ease;
+}
+.btn:hover, .file-button:hover { transform: translateY(-1px); }
+.btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.btn.primary { background: linear-gradient(135deg, var(--blue), var(--blue-2)); border-color: rgba(147,197,253,0.28); }
+.btn.ai { background: linear-gradient(135deg, #8b5cf6, #2563eb); border-color: rgba(196,181,253,0.36); }
+.btn.ghost { background: rgba(255,255,255,0.075); }
+.btn.danger { background: rgba(239, 68, 68, 0.18); border-color: rgba(239, 68, 68, 0.42); }
+.btn.whatsapp { background: linear-gradient(135deg, #16a34a, #22c55e); border-color: rgba(134, 239, 172, .32); }
+.small-btn { min-height: 38px; padding: 8px 12px; border-radius: 12px; font-size: .88rem; }
+
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin: 18px 0;
+}
+.metric-card {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 17px;
+  background: rgba(15, 23, 42, 0.76);
+  box-shadow: 0 12px 34px rgba(0,0,0,.18);
+}
+.metric-card span { display: block; color: var(--muted); font-size: .88rem; }
+.metric-card strong { display: block; margin-top: 6px; font-size: clamp(1.1rem, 2.6vw, 1.55rem); letter-spacing: -0.03em; }
+
+.quick-nav {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 2px 14px;
+  backdrop-filter: blur(16px);
+}
+.quick-nav a {
+  color: #dbeafe;
+  text-decoration: none;
+  padding: 10px 13px;
+  border-radius: 999px;
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  background: rgba(15,23,42,.84);
+  font-size: .92rem;
+  font-weight: 800;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: clamp(18px, 3.5vw, 30px);
+  background: var(--card);
+  box-shadow: 0 18px 60px rgba(0,0,0,.22);
+  margin: 18px 0;
+}
+.highlight-card { border-color: rgba(96, 165, 250, 0.36); }
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+.hint, .mini-note, .small { color: var(--muted); }
+.hint { margin: 0; max-width: 850px; }
+.mini-note, .small { font-size: .9rem; }
+.compact-top { margin-top: 14px; }
+
+.grid { display: grid; gap: 14px; }
+.grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+label {
+  display: block;
+  color: #dbeafe;
+  font-weight: 800;
+  font-size: .95rem;
+}
+input, select, textarea {
+  width: 100%;
+  margin-top: 7px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 14px;
+  background: rgba(2, 6, 23, 0.42);
+  color: var(--text);
+  padding: 13px 14px;
+  outline: none;
+  min-height: 48px;
+}
+textarea { min-height: 110px; resize: vertical; }
+input:focus, select:focus, textarea:focus { border-color: rgba(96, 165, 250, 0.9); box-shadow: 0 0 0 4px rgba(59,130,246,.16); }
+::placeholder { color: rgba(226,232,240,.45); }
+
+.visually-hidden-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.file-button.camera { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.file-button.gallery { background: linear-gradient(135deg, #0f766e, #14b8a6); }
+.file-button.mini-upload { background: rgba(255,255,255,0.08); }
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: .82rem;
+  font-weight: 900;
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.08);
+}
+.status-pill.ok { color: #bbf7d0; border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.12); }
+.status-pill.warning { color: #fde68a; border-color: rgba(245,158,11,.35); background: rgba(245,158,11,.12); }
+.status-pill.bad { color: #fecaca; border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.12); }
+
+.analysis-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.analysis-controls {
+  display: grid;
+  gap: 14px;
+}
+.button-stack { display: grid; gap: 10px; }
+.control-panel, .photo-stats, .quote-note, .panel-summary {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(2, 6, 23, .24);
+  padding: 15px;
+}
+.control-panel { display: grid; gap: 14px; }
+.inline-input { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+.inline-input span { margin-top: 7px; color: var(--muted); font-weight: 800; }
+.photo-stats { display: grid; gap: 11px; }
+.photo-stats span { color: var(--muted); display: block; font-size: .86rem; }
+.photo-stats strong { display: block; margin-top: 3px; word-break: break-word; }
+
+.canvas-shell {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  overflow: hidden;
+  background: #020617;
+  min-height: 360px;
+}
+.canvas-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+#photoCanvas {
+  display: block;
+  width: 100%;
+  max-height: 76vh;
+  background:
+    linear-gradient(45deg, rgba(255,255,255,.035) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255,255,255,.035) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255,255,255,.035) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,.035) 75%);
+  background-size: 22px 22px;
+  background-position: 0 0, 0 11px, 11px -11px, -11px 0px;
+}
+
+.results-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin: 20px 0 12px;
+}
+.detections-list, .leads { display: grid; gap: 10px; }
+.detection-row, .lead-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255,255,255,.045);
+}
+.detection-number {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  background: var(--blue);
+}
+.detection-number.easy { background: var(--green); }
+.detection-number.medium { background: var(--yellow); color: #111827; }
+.detection-number.hard { background: var(--red); }
+.detection-title { font-weight: 900; }
+.detection-meta { color: var(--muted); font-size: .9rem; margin-top: 2px; }
+.difficulty-tag {
+  border-radius: 999px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  font-weight: 900;
+  font-size: .8rem;
+}
+.difficulty-tag.easy { color: #bbf7d0; background: rgba(34,197,94,.13); }
+.difficulty-tag.medium { color: #fde68a; background: rgba(245,158,11,.13); }
+.difficulty-tag.hard { color: #fecaca; background: rgba(239,68,68,.13); }
+
+.model-shell {
+  height: min(62vh, 520px);
+  min-height: 330px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  overflow: hidden;
+  background: radial-gradient(circle at center, rgba(59,130,246,.14), rgba(2,6,23,.98));
+}
+model-viewer { width: 100%; height: 100%; }
+.model-fallback {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 22px;
+  color: var(--muted);
+  text-align: center;
+}
+.view-controls { margin-top: 12px; }
+.panel-summary { margin-top: 14px; color: var(--muted); }
+
+.quote-note { color: var(--muted); margin: 14px 0; }
+.quote-note strong { color: var(--text); }
+.quote-note span { display: block; margin-top: 4px; }
+.quote-box {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+.quote-box > div {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 15px;
+  background: rgba(2,6,23,.25);
+}
+.quote-box span { color: var(--muted); display: block; font-size: .86rem; }
+.quote-box strong { display: block; margin-top: 5px; font-size: 1.35rem; }
+.quote-box p { margin: 6px 0 0; color: var(--muted); }
+.hidden { display: none !important; }
+
+.archive-filters { margin: 16px 0; }
+.lead-row { grid-template-columns: 1fr auto; }
+.lead-row strong { display: block; }
+.lead-row span { display: block; color: var(--muted); font-size: .9rem; margin-top: 3px; }
+.lead-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.lead-actions .btn { min-height: 38px; padding: 8px 11px; border-radius: 12px; font-size: .86rem; }
+
+.honesty-note {
+  margin: 18px 0 0;
+  padding: 16px 18px;
+  border: 1px solid rgba(245,158,11,.26);
+  border-radius: 20px;
+  background: rgba(245,158,11,.09);
+  color: #fde68a;
+}
+.honesty-note strong { color: #fff7ed; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  transform: translateX(-50%) translateY(120%);
+  width: min(520px, calc(100% - 28px));
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(15,23,42,.96);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transition: .24s ease;
+  z-index: 20;
+  font-weight: 800;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+@media (max-width: 980px) {
+  .hero-grid, .analysis-layout { grid-template-columns: 1fr; }
+  .dashboard { grid-template-columns: repeat(3, 1fr); }
+  .quote-box { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .app-shell { width: min(100% - 18px, 1180px); padding-top: 9px; }
+  .hero { border-radius: 24px; }
+  .hero-actions, .actions, .view-controls { width: 100%; }
+  .hero-actions .btn, .actions .btn, .actions .file-button { flex: 1 1 150px; }
+  .dashboard { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+  .metric-card { padding: 13px; border-radius: 16px; }
+  .grid.two { grid-template-columns: 1fr; }
+  .card { border-radius: 20px; margin: 12px 0; }
+  .section-title, .results-head { display: block; }
+  .section-title .status-pill { margin-top: 10px; }
+  .canvas-toolbar { display: grid; }
+  #photoCanvas { max-height: 64vh; }
+  .detection-row { grid-template-columns: auto 1fr; }
+  .difficulty-tag { grid-column: 1 / -1; width: fit-content; }
+  .quote-box { grid-template-columns: 1fr; }
+  .lead-row { grid-template-columns: 1fr; }
+  .lead-actions { justify-content: flex-start; }
+}
+
+@media print {
+  body { background: white; color: black; }
+  .quick-nav, .hero-actions, .analysis-controls, .actions, .view-controls, .toast { display: none !important; }
+  .app-shell { width: 100%; padding: 0; }
+  .hero, .card, .metric-card, .honesty-note { box-shadow: none; background: white; color: black; border-color: #ddd; }
+  .hint, .mini-note, .small, .metric-card span { color: #444; }
+  input, select, textarea { border-color: #ccc; color: black; background: white; }
+}
+
+  </style>
   <script type="module">
     (async () => {
       const sources = [
@@ -17,383 +486,1398 @@
       for (const source of sources) {
         try {
           await import(source);
-          window.dispatchEvent(new Event("dentvision-model-viewer-ready"));
+          window.dispatchEvent(new Event("dentvision-model-ready"));
           return;
         } catch (error) {
-          console.warn("Motore 3D non caricato da", source, error);
+          console.warn("DentVision: modello 3D non caricato da", source, error);
         }
       }
-      window.dispatchEvent(new Event("dentvision-model-viewer-failed"));
+      window.dispatchEvent(new Event("dentvision-model-failed"));
     })();
   </script>
 </head>
 <body>
-  <main class="app">
+  <div class="app-shell">
     <header class="hero">
-      <div class="hero-top">
+      <div class="hero-grid">
         <div>
-          <span class="badge">DentVision AI · v2.1.2 Locale gratuita</span>
+          <div class="eyebrow">DentVision AI · v4.0 locale</div>
           <h1>Gestione danni grandine</h1>
-          <p>Pratica, auto 3D, foto per zona, preventivo, archivio e report professionale in un unico flusso.</p>
+          <p class="hero-text">Pratica cliente, analisi foto, mappa dei bolli, auto 3D, preventivo, archivio e report. Tutto locale, senza API obbligatorie.</p>
         </div>
         <div class="hero-actions">
-          <button id="newCase" type="button" class="hero-secondary">Nuova pratica</button>
-          <button id="saveCaseTop" type="button">Salva pratica</button>
+          <button id="newCase" type="button" class="btn ghost">Nuova pratica</button>
+          <button id="saveCaseTop" type="button" class="btn primary">Salva pratica</button>
         </div>
       </div>
       <div class="case-strip">
-        <span><b>Pratica:</b> <strong id="caseIdText">DV-...</strong></span>
-        <span id="draftStatus">Bozza locale attiva</span>
+        <span><strong>Pratica:</strong> <b id="caseIdText">DV-...</b></span>
+        <span id="draftStatus">Bozza locale pronta</span>
       </div>
     </header>
 
-    <section class="dashboard">
-      <article class="metric-card">
-        <span>Stato pratica</span>
-        <strong id="dashStatus">Nuova</strong>
-      </article>
-      <article class="metric-card">
-        <span>Zone segnate</span>
-        <strong id="dashZones">0</strong>
-      </article>
-      <article class="metric-card">
-        <span>Bolli totali</span>
-        <strong id="dashDents">0</strong>
-      </article>
-      <article class="metric-card">
-        <span>Foto collegate</span>
-        <strong id="dashPhotos">0</strong>
-      </article>
-      <article class="metric-card">
-        <span>Stima lavoro</span>
-        <strong id="dashHours">—</strong>
-      </article>
+    <section class="dashboard" aria-label="Riepilogo pratica">
+      <article class="metric-card"><span>Stato</span><strong id="dashStatus">Nuova</strong></article>
+      <article class="metric-card"><span>Foto</span><strong id="dashPhotos">0</strong></article>
+      <article class="metric-card"><span>Bolli rilevati</span><strong id="dashDents">0</strong></article>
+      <article class="metric-card"><span>Difficili</span><strong id="dashHard">0</strong></article>
+      <article class="metric-card"><span>Stima lavoro</span><strong id="dashHours">—</strong></article>
+      <article class="metric-card"><span>Preventivo</span><strong id="dashQuote">—</strong></article>
     </section>
 
-    <section class="card">
-      <div class="section-title">
-        <div>
-          <span class="section-kicker">01 · Pratica</span>
-          <h2>Cliente e veicolo</h2>
-        </div>
-        <span class="mini-note">I dati restano nel browser di questo telefono.</span>
-      </div>
+    <nav class="quick-nav" aria-label="Navigazione rapida">
+      <a href="#pratica">Pratica</a>
+      <a href="#analisi">Analisi foto</a>
+      <a href="#mappa">Auto 3D</a>
+      <a href="#preventivo">Preventivo</a>
+      <a href="#archivio">Archivio</a>
+    </nav>
 
-      <div class="grid">
-        <label>Nome cliente<input id="clientName" placeholder="Es. Mario Rossi" autocomplete="name"></label>
-        <label>Telefono<input id="phone" placeholder="+39..." inputmode="tel" autocomplete="tel"></label>
-        <label>Email<input id="email" placeholder="Facoltativa" inputmode="email" autocomplete="email"></label>
-        <label>Marca e modello<input id="carModel" placeholder="Es. Opel Insignia 2014" autocomplete="off"></label>
-        <label>Targa o riferimento<input id="plate" placeholder="Es. AB123CD" autocomplete="off"></label>
-        <label>Città / località<input id="city" placeholder="Es. Lissone" autocomplete="address-level2"></label>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="section-title">
-        <div>
-          <span class="section-kicker">02 · Workflow</span>
-          <h2>Stato e organizzazione</h2>
-        </div>
-      </div>
-
-      <div class="grid">
-        <label>Stato pratica
-          <select id="status">
-            <option value="Nuova">Nuova</option>
-            <option value="Sopralluogo">Sopralluogo</option>
-            <option value="Preventivo inviato">Preventivo inviato</option>
-            <option value="Approvata">Approvata</option>
-            <option value="Da fissare">Da fissare</option>
-            <option value="In lavorazione">In lavorazione</option>
-            <option value="Completata">Completata</option>
-            <option value="Persa">Persa</option>
-          </select>
-        </label>
-        <label>Priorità
-          <select id="priority">
-            <option value="Normale">Normale</option>
-            <option value="Alta">Alta</option>
-            <option value="Urgente">Urgente</option>
-          </select>
-        </label>
-        <label>Data evento / grandinata<input id="eventDate" type="date"></label>
-        <label>Appuntamento / richiamo<input id="appointment" type="datetime-local"></label>
-        <label>Assicurazione<input id="insurer" placeholder="Facoltativa"></label>
-        <label>Numero sinistro<input id="claimCode" placeholder="Facoltativo"></label>
-      </div>
-
-      <label>Prossima azione<textarea id="nextAction" rows="2" placeholder="Es. richiamare domani, inviare preventivo, fissare appuntamento..."></textarea></label>
-    </section>
-
-    <section class="card">
-      <div class="section-title">
-        <div>
-          <span class="section-kicker">03 · Mappa danni</span>
-          <h2>Auto 3D e zone di lavoro</h2>
-          <p class="hint">Trascina per ruotare, due dita per zoomare. Tocca la carrozzeria per aprire una scheda: quantità, gravità, nota e foto di quella zona.</p>
-        </div>
-        <span id="threeStatus" class="status-pill warning">Caricamento modello…</span>
-      </div>
-
-      <div class="model-shell">
-        <model-viewer id="car3d"
-          src="generic_sedan_car.glb"
-          alt="Modello 3D di una berlina"
-          camera-controls
-          touch-action="pan-y"
-          interaction-prompt="none"
-          shadow-intensity="1.25"
-          environment-image="neutral"
-          exposure="1.05"
-          camera-orbit="-35deg 68deg 105%"
-          min-camera-orbit="auto auto 55%"
-          max-camera-orbit="auto auto 220%"
-          loading="eager">
-          <div id="modelFallback" class="model-fallback">Sto caricando la berlina 3D…</div>
-        </model-viewer>
-      </div>
-
-      <div class="view-controls">
-        <button type="button" data-view="front">Davanti</button>
-        <button type="button" data-view="left">Lato SX</button>
-        <button type="button" data-view="right">Lato DX</button>
-        <button type="button" data-view="rear">Dietro</button>
-        <button type="button" data-view="top">Dall’alto</button>
-        <button type="button" data-view="reset" class="secondary">Reset</button>
-      </div>
-
-      <div class="damage-summary">
-        <strong id="pointCount">0 zone danno</strong>
-        <span id="panelSummary">Pannelli: da definire</span>
-      </div>
-
-      <div id="damageList" class="damage-list"></div>
-
-      <div class="actions">
-        <button id="undoPoint" type="button" class="secondary">Togli ultima zona</button>
-        <button id="clearPoints" type="button" class="danger">Cancella tutte le zone</button>
-      </div>
-      <p class="small">Il file 3D non contiene pannelli con nomi separati: nella scheda scegli manualmente cofano, tetto, fiancata, baule o parafango.</p>
-    </section>
-
-    <section class="card">
-      <div class="section-title">
-        <div>
-          <span class="section-kicker">04 · Stima</span>
-          <h2>Preventivo e tempi</h2>
-        </div>
-      </div>
-
-      <div class="grid">
-        <label>Bolli totali manuali <span class="input-help">Usato solo se non hai zone 3D</span>
-          <input id="manualDents" type="number" min="1" step="1" inputmode="numeric" placeholder="Es. 250">
-        </label>
-        <label>Grandezza prevalente
-          <select id="globalSize">
-            <option value="piccola">Piccola</option>
-            <option value="media">Media</option>
-            <option value="grande">Grande</option>
-          </select>
-        </label>
-        <label>Vernice / carrozzeria
-          <select id="globalPaint">
-            <option value="no">Integra / non sembra danneggiata</option>
-            <option value="si">Danneggiata / da valutare</option>
-          </select>
-        </label>
-        <label>Difficoltà generale
-          <select id="difficulty">
-            <option value="standard">Standard</option>
-            <option value="difficile">Difficile</option>
-            <option value="molto_difficile">Molto difficile</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="listino">
-        <strong>Listino base:</strong> 1–50: 350€ · 51–200: 550€ · 201–300: 750€ · 301–550: 950€ · oltre 550: 1.150€.
-        <br><span class="small">La cifra è una stima operativa. Il prezzo finale resta sempre modificabile.</span>
-      </div>
-
-      <div class="actions">
-        <button id="calculateQuote" type="button">Calcola preventivo</button>
-        <button id="useZonesTotal" type="button" class="secondary">Usa totale delle zone</button>
-      </div>
-
-      <div id="quoteBox" class="quote-box hidden">
-        <div class="quote-main">
+    <main>
+      <section id="pratica" class="card">
+        <div class="section-title">
           <div>
-            <span class="quote-label">Prezzo suggerito</span>
-            <strong id="suggestedPrice">—</strong>
+            <span class="section-kicker">01 · Pratica</span>
+            <h2>Cliente e veicolo</h2>
           </div>
-          <div>
-            <span class="quote-label">Tempo indicativo</span>
-            <strong id="estimatedHours">—</strong>
-          </div>
-          <div>
-            <span class="quote-label">Bolli usati</span>
-            <strong id="quoteDents">—</strong>
-          </div>
-        </div>
-        <div id="quoteBreakdown" class="quote-breakdown"></div>
-        <label>Prezzo finale concordato<input id="finalPrice" type="number" min="0" step="10" inputmode="numeric" placeholder="Modificabile"></label>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="section-title">
-        <div>
-          <span class="section-kicker">05 · Note</span>
-          <h2>Osservazioni generali</h2>
-        </div>
-      </div>
-      <label>Note della pratica<textarea id="caseNotes" rows="5" placeholder="Es. danno vecchio, cliente vuole urgenza, veicolo da ritirare, richiesta assicurazione..."></textarea></label>
-    </section>
-
-    <section class="card">
-      <div class="section-title">
-        <div>
-          <span class="section-kicker">06 · Salvataggio e invio</span>
-          <h2>Chiudi la pratica</h2>
-          <p class="hint">Salva prima. Poi puoi inviare un riepilogo WhatsApp o creare un report stampabile in PDF.</p>
-        </div>
-      </div>
-      <div class="actions">
-        <button id="saveCase" type="button">Salva pratica</button>
-        <button id="shareWhatsApp" type="button" class="whatsapp">WhatsApp</button>
-        <button id="copySummary" type="button" class="secondary">Copia riepilogo</button>
-        <button id="printReport" type="button" class="secondary">Stampa / Salva PDF</button>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="section-title">
-        <div>
-          <span class="section-kicker">07 · Archivio</span>
-          <h2>Pratiche salvate</h2>
-        </div>
-        <span id="archiveCount" class="mini-note">0 pratiche</span>
-      </div>
-
-      <div class="grid archive-filters">
-        <label>Cerca pratica<input id="search" placeholder="Nome, targa, auto, città, pannello, nota..."></label>
-        <label>Filtra stato
-          <select id="statusFilter">
-            <option value="">Tutti gli stati</option>
-            <option value="Nuova">Nuova</option>
-            <option value="Sopralluogo">Sopralluogo</option>
-            <option value="Preventivo inviato">Preventivo inviato</option>
-            <option value="Approvata">Approvata</option>
-            <option value="Da fissare">Da fissare</option>
-            <option value="In lavorazione">In lavorazione</option>
-            <option value="Completata">Completata</option>
-            <option value="Persa">Persa</option>
-          </select>
-        </label>
-      </div>
-
-      <div id="leads"></div>
-    </section>
-
-    <section class="card compact-card">
-      <div class="section-title">
-        <div>
-          <span class="section-kicker">08 · Backup</span>
-          <h2>Esporta e recupera dati</h2>
-        </div>
-      </div>
-      <p class="small">Il backup esporta pratiche, preventivi e dettagli. Le foto restano nel browser di questo telefono e non vengono incluse nel file.</p>
-      <input id="importBackup" class="visually-hidden-file" type="file" accept=".json">
-      <div class="actions">
-        <button id="exportJson" type="button" class="secondary">Backup JSON</button>
-        <button id="exportCsv" type="button" class="secondary">Esporta elenco CSV</button>
-        <label for="importBackup" class="file-button secondary-file">Importa backup</label>
-      </div>
-    </section>
-
-    <section class="honesty-note">
-      <strong>Nota:</strong> questa versione usa analisi locale gratuita: non richiede API, non costa nulla e non invia foto a server esterni. Il conteggio e il preventivo restano sempre da confermare dal levabolli.
-    </section>
-
-    <dialog id="damageDialog" class="damage-dialog" aria-labelledby="damageDialogTitle">
-      <div class="dialog-card">
-        <div class="dialog-head">
-          <div>
-            <span class="badge">Zona danno 3D</span>
-            <h2 id="damageDialogTitle">Dettagli zona</h2>
-          </div>
-          <button id="closeDamageDialog" type="button" class="icon-close" aria-label="Chiudi">×</button>
+          <span class="mini-note">Salvataggio nel browser di questo dispositivo.</span>
         </div>
 
-        <p class="hint">Ogni zona può avere quantità, profondità, nota e foto proprie. Non usare un punto per ogni bollo: un punto rappresenta una zona di lavoro.</p>
+        <div class="grid two">
+          <label>Nome cliente<input id="clientName" placeholder="Es. Mario Rossi" autocomplete="name"></label>
+          <label>Telefono<input id="phone" placeholder="+39..." inputmode="tel" autocomplete="tel"></label>
+          <label>Email<input id="email" placeholder="Facoltativa" inputmode="email" autocomplete="email"></label>
+          <label>Marca e modello<input id="carModel" placeholder="Es. Opel Insignia 2014" autocomplete="off"></label>
+          <label>Targa o riferimento<input id="plate" placeholder="Es. AB123CD" autocomplete="off"></label>
+          <label>Città / località<input id="city" placeholder="Es. Lissone" autocomplete="address-level2"></label>
+        </div>
 
-        <div class="grid">
-          <label>Pannello
-            <select id="pointPanel">
-              <option value="Da definire">Da definire</option>
-              <option value="Cofano">Cofano</option>
-              <option value="Tetto">Tetto</option>
-              <option value="Baule">Baule</option>
-              <option value="Fiancata sinistra">Fiancata sinistra</option>
-              <option value="Fiancata destra">Fiancata destra</option>
-              <option value="Parafango anteriore sinistro">Parafango anteriore sinistro</option>
-              <option value="Parafango anteriore destro">Parafango anteriore destro</option>
-              <option value="Parafango posteriore sinistro">Parafango posteriore sinistro</option>
-              <option value="Parafango posteriore destro">Parafango posteriore destro</option>
-              <option value="Altro">Altro</option>
+        <div class="grid two compact-top">
+          <label>Stato pratica
+            <select id="status">
+              <option value="Nuova">Nuova</option>
+              <option value="Sopralluogo">Sopralluogo</option>
+              <option value="Preventivo inviato">Preventivo inviato</option>
+              <option value="Approvata">Approvata</option>
+              <option value="Da fissare">Da fissare</option>
+              <option value="In lavorazione">In lavorazione</option>
+              <option value="Completata">Completata</option>
+              <option value="Persa">Persa</option>
             </select>
           </label>
-          <label>Zona / riferimento<input id="pointZone" placeholder="Es. tetto centrale, vicino nervatura"></label>
-          <label>Numero bolli in questa zona<input id="pointDents" type="number" min="1" step="1" inputmode="numeric" value="1"></label>
-          <label>Grandezza
-            <select id="pointSize"><option value="piccola">Piccola</option><option value="media">Media</option><option value="grande">Grande</option></select>
+          <label>Priorità
+            <select id="priority">
+              <option value="Normale">Normale</option>
+              <option value="Alta">Alta</option>
+              <option value="Urgente">Urgente</option>
+            </select>
           </label>
-          <label>Profondità
-            <select id="pointDepth"><option value="lieve">Lieve</option><option value="media">Media</option><option value="forte">Forte</option></select>
-          </label>
-          <label>Vernice
-            <select id="pointPaint"><option value="no">Integra / non sembra danneggiata</option><option value="si">Danneggiata</option></select>
-          </label>
+          <label>Data grandinata<input id="eventDate" type="date"></label>
+          <label>Appuntamento / richiamo<input id="appointment" type="datetime-local"></label>
+          <label>Assicurazione<input id="insurer" placeholder="Facoltativa"></label>
+          <label>Numero sinistro<input id="claimCode" placeholder="Facoltativo"></label>
         </div>
 
-        <label>Nota del levabolli<textarea id="pointNote" rows="4" placeholder="Es. accesso difficile, bordo porta, nervatura, grandine vecchia..."></textarea></label>
+        <label class="compact-top">Prossima azione<textarea id="nextAction" rows="2" placeholder="Es. richiamare domani, inviare preventivo, fissare appuntamento..."></textarea></label>
+      </section>
 
-        <section class="point-photos">
-          <div class="point-photos-head">
-            <div>
-              <h3>Foto di questa zona</h3>
-              <p id="pointPhotoHint" class="small">Nessuna foto collegata.</p>
+      <section id="analisi" class="card highlight-card">
+        <div class="section-title">
+          <div>
+            <span class="section-kicker">02 · Analisi foto</span>
+            <h2>Rilevamento locale delle bollature</h2>
+            <p class="hint">Carica una foto della lamiera. L'app cerca zone circolari sospette, le numera e le classifica. È una stima tecnica locale, non una perizia automatica infallibile, perché le foto hanno il brutto vizio di mentire.</p>
+          </div>
+          <span id="engineStatus" class="status-pill warning">Motore in attesa</span>
+        </div>
+
+        <div class="analysis-layout">
+          <aside class="analysis-controls">
+            <input id="photoInput" class="visually-hidden-file" type="file" accept="image/*">
+            <input id="cameraInput" class="visually-hidden-file" type="file" accept="image/*" capture="environment">
+
+            <div class="button-stack">
+              <label for="cameraInput" class="file-button camera">Scatta foto</label>
+              <label for="photoInput" class="file-button gallery">Apri galleria</label>
+              <button id="analyzePhoto" type="button" class="btn ai" disabled>Analizza foto</button>
+              <button id="clearDetections" type="button" class="btn danger" disabled>Cancella rilevamenti</button>
             </div>
-            <span id="pointPhotoBadge" class="photo-badge">0 foto</span>
+
+            <div class="control-panel">
+              <label>Sensibilità analisi
+                <input id="sensitivity" type="range" min="1" max="5" step="1" value="3">
+                <span id="sensitivityText" class="small">Normale</span>
+              </label>
+              <label>Larghezza visibile pannello
+                <div class="inline-input"><input id="panelWidthCm" type="number" min="20" max="250" step="5" value="120" inputmode="numeric"><span>cm</span></div>
+              </label>
+              <label>Pannello prevalente
+                <select id="activePanel">
+                  <option value="Da definire">Da definire</option>
+                  <option value="Cofano">Cofano</option>
+                  <option value="Tetto">Tetto</option>
+                  <option value="Baule">Baule</option>
+                  <option value="Fiancata sinistra">Fiancata sinistra</option>
+                  <option value="Fiancata destra">Fiancata destra</option>
+                  <option value="Parafango">Parafango</option>
+                  <option value="Porta">Porta</option>
+                  <option value="Altro">Altro</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="photo-stats">
+              <div><span>Foto attiva</span><strong id="activePhotoName">Nessuna</strong></div>
+              <div><span>Rilevati</span><strong id="photoDentCount">0</strong></div>
+              <div><span>Qualità</span><strong id="photoQuality">—</strong></div>
+            </div>
+          </aside>
+
+          <div class="canvas-shell">
+            <div class="canvas-toolbar">
+              <span id="canvasHint">Carica una foto per iniziare</span>
+              <button id="downloadMarkedPhoto" type="button" class="btn ghost small-btn" disabled>Scarica foto segnata</button>
+            </div>
+            <canvas id="photoCanvas" width="1200" height="800" aria-label="Foto analizzata"></canvas>
           </div>
-
-          <input id="pointGalleryPhotos" class="visually-hidden-file" type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.gif" multiple>
-          <input id="pointCameraPhotos" class="visually-hidden-file" type="file" accept="image/*" capture="environment">
-
-          <div class="photo-actions">
-            <label for="pointGalleryPhotos" class="file-button gallery-button">Apri galleria</label>
-            <label for="pointCameraPhotos" class="file-button camera-button">Scatta foto</label>
-            <button id="checkPointPhotos" type="button" class="secondary">Controlla foto</button>
-            <button id="analyzePointAi" type="button" class="ai-button">Analisi locale gratuita</button>
-            <button id="clearPointPhotos" type="button" class="danger-mini">Cancella foto</button>
-          </div>
-
-          <p class="ai-privacy-note">Analisi gratuita locale: le foto non vengono inviate a server esterni. Controlla qualità foto e compila un suggerimento prudente usando i dati della scheda.</p>
-          <div id="pointPhotoPreview" class="preview point-photo-preview"></div>
-          <div id="pointPhotoCheck" class="photo-check hidden"></div>
-          <div id="aiResult" class="ai-result hidden" aria-live="polite"></div>
-        </section>
-
-        <div class="actions dialog-actions">
-          <button id="cancelPointEdit" type="button" class="secondary">Annulla zona</button>
-          <button id="savePointEdit" type="button">Salva dettagli</button>
         </div>
-      </div>
-    </dialog>
-  </main>
- <script src="ai-config.js?v=212"></script>
-<script src="dent-engine.js?v=300"></script>
-<script src="app.js?v=212" defer></script>
+
+        <div class="results-head">
+          <h3>Risultati rilevati</h3>
+          <span id="resultsNote" class="mini-note">Nessun risultato.</span>
+        </div>
+        <div id="detectionsList" class="detections-list"></div>
+      </section>
+
+      <section id="mappa" class="card">
+        <div class="section-title">
+          <div>
+            <span class="section-kicker">03 · Mappa danni</span>
+            <h2>Auto 3D e zone di lavoro</h2>
+            <p class="hint">Il modello 3D serve per orientarti durante il sopralluogo. I bolli rilevati dalle foto restano collegati alla pratica e al pannello scelto.</p>
+          </div>
+          <span id="threeStatus" class="status-pill warning">Caricamento 3D</span>
+        </div>
+
+        <div class="model-shell">
+          <model-viewer id="car3d"
+            src="generic_sedan_car.glb"
+            alt="Modello 3D auto"
+            camera-controls
+            touch-action="pan-y"
+            interaction-prompt="none"
+            shadow-intensity="1.2"
+            environment-image="neutral"
+            exposure="1.05"
+            camera-orbit="-35deg 68deg 105%"
+            min-camera-orbit="auto auto 55%"
+            max-camera-orbit="auto auto 220%"
+            loading="eager">
+            <div id="modelFallback" class="model-fallback">Se il 3D non parte, il resto dell'app funziona comunque. Miracolo raro nell'informatica.</div>
+          </model-viewer>
+        </div>
+
+        <div class="view-controls">
+          <button type="button" data-view="front" class="btn ghost">Davanti</button>
+          <button type="button" data-view="left" class="btn ghost">Lato SX</button>
+          <button type="button" data-view="right" class="btn ghost">Lato DX</button>
+          <button type="button" data-view="rear" class="btn ghost">Dietro</button>
+          <button type="button" data-view="top" class="btn ghost">Alto</button>
+          <button type="button" data-view="reset" class="btn ghost">Reset</button>
+        </div>
+
+        <div class="panel-summary" id="panelSummary">Nessun pannello analizzato.</div>
+      </section>
+
+      <section id="preventivo" class="card">
+        <div class="section-title">
+          <div>
+            <span class="section-kicker">04 · Preventivo</span>
+            <h2>Stima economica e tempi</h2>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <label>Bolli manuali extra<input id="manualDents" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
+          <label>Difficoltà generale
+            <select id="globalDifficulty">
+              <option value="standard">Standard</option>
+              <option value="difficile">Difficile</option>
+              <option value="molto_difficile">Molto difficile</option>
+            </select>
+          </label>
+          <label>Vernice / carrozzeria
+            <select id="paintDamage">
+              <option value="no">Integra / da PDR</option>
+              <option value="si">Danneggiata / da valutare</option>
+            </select>
+          </label>
+          <label>Prezzo finale concordato<input id="finalPrice" type="number" min="0" step="10" inputmode="numeric" placeholder="Facoltativo"></label>
+        </div>
+
+        <div class="quote-note">
+          <strong>Listino base:</strong> 1-50: 350€ · 51-200: 550€ · 201-300: 750€ · 301-550: 950€ · oltre 550: 1.150€.
+          <span>La stima è modificabile. Il levabolli decide, non il tostapane con JavaScript.</span>
+        </div>
+
+        <div class="actions">
+          <button id="calculateQuote" type="button" class="btn primary">Calcola preventivo</button>
+          <button id="copySummary" type="button" class="btn ghost">Copia riepilogo</button>
+          <button id="shareWhatsApp" type="button" class="btn whatsapp">WhatsApp</button>
+          <button id="printReport" type="button" class="btn ghost">Stampa / PDF</button>
+        </div>
+
+        <div id="quoteBox" class="quote-box hidden">
+          <div><span>Prezzo suggerito</span><strong id="suggestedPrice">—</strong></div>
+          <div><span>Tempo indicativo</span><strong id="estimatedHours">—</strong></div>
+          <div><span>Bolli usati</span><strong id="quoteDents">—</strong></div>
+          <div><span>Dettaglio</span><p id="quoteBreakdown">—</p></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <span class="section-kicker">05 · Note</span>
+            <h2>Osservazioni generali</h2>
+          </div>
+        </div>
+        <label>Note della pratica<textarea id="caseNotes" rows="5" placeholder="Accessi difficili, nervature, danni vecchi, urgenza cliente, richieste assicurazione..."></textarea></label>
+      </section>
+
+      <section id="archivio" class="card">
+        <div class="section-title">
+          <div>
+            <span class="section-kicker">06 · Archivio</span>
+            <h2>Pratiche salvate</h2>
+          </div>
+          <span id="archiveCount" class="mini-note">0 pratiche</span>
+        </div>
+
+        <div class="actions">
+          <button id="saveCase" type="button" class="btn primary">Salva pratica</button>
+          <button id="exportJson" type="button" class="btn ghost">Backup JSON</button>
+          <button id="exportCsv" type="button" class="btn ghost">Esporta CSV</button>
+          <label for="importBackup" class="file-button mini-upload">Importa backup</label>
+          <input id="importBackup" class="visually-hidden-file" type="file" accept=".json,application/json">
+        </div>
+
+        <div class="grid two archive-filters">
+          <label>Cerca<input id="search" placeholder="Nome, targa, città, pannello..."></label>
+          <label>Filtra stato
+            <select id="statusFilter">
+              <option value="">Tutti</option>
+              <option value="Nuova">Nuova</option>
+              <option value="Sopralluogo">Sopralluogo</option>
+              <option value="Preventivo inviato">Preventivo inviato</option>
+              <option value="Approvata">Approvata</option>
+              <option value="Da fissare">Da fissare</option>
+              <option value="In lavorazione">In lavorazione</option>
+              <option value="Completata">Completata</option>
+              <option value="Persa">Persa</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="leads" class="leads"></div>
+      </section>
+
+      <section class="honesty-note">
+        <strong>Nota tecnica:</strong> l'analisi foto è locale e gratuita. Non invia immagini a server esterni. La precisione dipende da luce, riflessi, angolo, pulizia della lamiera e scala impostata. Usala come assistente, non come oracolo con partita IVA.
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+(() => {
+  "use strict";
+
+  const VERSION = "4.0.0";
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("Immagine non caricabile"));
+      image.src = src;
+    });
+  }
+
+  function makeCanvas(width, height) {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    return canvas;
+  }
+
+  function imageToImageData(image, maxSide = 920) {
+    const scale = Math.min(1, maxSide / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
+    const width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
+    const height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
+    const canvas = makeCanvas(width, height);
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(image, 0, 0, width, height);
+    return { canvas, ctx, imageData: ctx.getImageData(0, 0, width, height), scale };
+  }
+
+  function toGray(imageData) {
+    const { data, width, height } = imageData;
+    const gray = new Float32Array(width * height);
+    for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+      gray[p] = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+    }
+    return gray;
+  }
+
+  function boxBlur(src, width, height, radius) {
+    if (radius <= 0) return src.slice();
+    const temp = new Float32Array(src.length);
+    const dst = new Float32Array(src.length);
+    const windowSize = radius * 2 + 1;
+
+    for (let y = 0; y < height; y++) {
+      let sum = 0;
+      const row = y * width;
+      for (let x = -radius; x <= radius; x++) {
+        sum += src[row + clamp(x, 0, width - 1)];
+      }
+      for (let x = 0; x < width; x++) {
+        temp[row + x] = sum / windowSize;
+        const removeX = clamp(x - radius, 0, width - 1);
+        const addX = clamp(x + radius + 1, 0, width - 1);
+        sum += src[row + addX] - src[row + removeX];
+      }
+    }
+
+    for (let x = 0; x < width; x++) {
+      let sum = 0;
+      for (let y = -radius; y <= radius; y++) {
+        sum += temp[clamp(y, 0, height - 1) * width + x];
+      }
+      for (let y = 0; y < height; y++) {
+        dst[y * width + x] = sum / windowSize;
+        const removeY = clamp(y - radius, 0, height - 1);
+        const addY = clamp(y + radius + 1, 0, height - 1);
+        sum += temp[addY * width + x] - temp[removeY * width + x];
+      }
+    }
+
+    return dst;
+  }
+
+  function sobel(gray, width, height) {
+    const out = new Float32Array(gray.length);
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const i = y * width + x;
+        const a = gray[i - width - 1], b = gray[i - width], c = gray[i - width + 1];
+        const d = gray[i - 1], f = gray[i + 1];
+        const g = gray[i + width - 1], h = gray[i + width], k = gray[i + width + 1];
+        const gx = -a - 2 * d - g + c + 2 * f + k;
+        const gy = -a - 2 * b - c + g + 2 * h + k;
+        out[i] = Math.sqrt(gx * gx + gy * gy) / 4;
+      }
+    }
+    return out;
+  }
+
+  function stats(values, step = 1) {
+    let sum = 0;
+    let count = 0;
+    for (let i = 0; i < values.length; i += step) {
+      sum += values[i];
+      count++;
+    }
+    const mean = sum / Math.max(1, count);
+    let variance = 0;
+    for (let i = 0; i < values.length; i += step) {
+      const d = values[i] - mean;
+      variance += d * d;
+    }
+    return { mean, std: Math.sqrt(variance / Math.max(1, count)) };
+  }
+
+  function buildScore(gray, width, height) {
+    const small = boxBlur(gray, width, height, 2);
+    const large = boxBlur(gray, width, height, 10);
+    const edge = sobel(small, width, height);
+    const score = new Float32Array(gray.length);
+
+    for (let i = 0; i < score.length; i++) {
+      const dog = Math.abs(small[i] - large[i]);
+      score[i] = dog * 1.45 + edge[i] * 0.38;
+    }
+    return { score, edge };
+  }
+
+  function connectedComponents(score, width, height, threshold, options) {
+    const visited = new Uint8Array(score.length);
+    const components = [];
+    const stack = [];
+    const minArea = options.minArea;
+    const maxArea = options.maxArea;
+    const margin = 2;
+
+    for (let y = margin; y < height - margin; y++) {
+      for (let x = margin; x < width - margin; x++) {
+        const start = y * width + x;
+        if (visited[start] || score[start] < threshold) continue;
+
+        let area = 0;
+        let sumX = 0, sumY = 0, sumScore = 0;
+        let minX = x, maxX = x, minY = y, maxY = y;
+        let peak = score[start];
+
+        visited[start] = 1;
+        stack.length = 0;
+        stack.push(start);
+
+        while (stack.length) {
+          const idx = stack.pop();
+          const cy = Math.floor(idx / width);
+          const cx = idx - cy * width;
+          const s = score[idx];
+
+          area++;
+          sumX += cx * s;
+          sumY += cy * s;
+          sumScore += s;
+          peak = Math.max(peak, s);
+          if (cx < minX) minX = cx;
+          if (cx > maxX) maxX = cx;
+          if (cy < minY) minY = cy;
+          if (cy > maxY) maxY = cy;
+
+          const neighbors = [idx - 1, idx + 1, idx - width, idx + width];
+          for (const n of neighbors) {
+            if (n <= 0 || n >= score.length) continue;
+            if (!visited[n] && score[n] >= threshold) {
+              visited[n] = 1;
+              stack.push(n);
+            }
+          }
+        }
+
+        if (area < minArea || area > maxArea) continue;
+        const boxW = maxX - minX + 1;
+        const boxH = maxY - minY + 1;
+        const aspect = boxW / Math.max(1, boxH);
+        if (aspect < 0.34 || aspect > 2.95) continue;
+
+        const radius = Math.sqrt(area / Math.PI) * 1.42;
+        if (radius < options.minRadius || radius > options.maxRadius) continue;
+
+        const fill = area / Math.max(1, boxW * boxH);
+        if (fill < 0.10 || fill > 0.95) continue;
+
+        components.push({
+          x: sumX / Math.max(1, sumScore),
+          y: sumY / Math.max(1, sumScore),
+          radius,
+          area,
+          boxW,
+          boxH,
+          aspect,
+          fill,
+          peak,
+          score: sumScore / Math.max(1, area)
+        });
+      }
+    }
+    return components;
+  }
+
+  function distance(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function mergeClose(components, maxCount) {
+    const ordered = components
+      .slice()
+      .sort((a, b) => (b.peak + b.score) - (a.peak + a.score));
+    const selected = [];
+
+    for (const c of ordered) {
+      const tooClose = selected.some((s) => distance(c, s) < Math.max(c.radius, s.radius) * 1.18);
+      if (!tooClose) selected.push(c);
+      if (selected.length >= maxCount) break;
+    }
+
+    return selected.sort((a, b) => a.y === b.y ? a.x - b.x : a.y - b.y);
+  }
+
+  function qualityFromImage(gray, edge) {
+    const gStats = stats(gray, 5);
+    const eStats = stats(edge, 5);
+    const contrast = gStats.std;
+    const sharpness = eStats.mean;
+    let label = "Buona";
+    let score = 72;
+
+    if (contrast < 24 || sharpness < 8) {
+      label = "Bassa";
+      score = 42;
+    } else if (contrast < 34 || sharpness < 13) {
+      label = "Media";
+      score = 58;
+    } else if (contrast > 60 && sharpness > 21) {
+      label = "Alta";
+      score = 85;
+    }
+
+    return { label, score, contrast: Math.round(contrast), sharpness: Math.round(sharpness) };
+  }
+
+  function classify(component, scale, imageWidth, panelWidthCm) {
+    const radiusOriginal = component.radius / scale;
+    const mmPerPixel = (Math.max(20, Number(panelWidthCm) || 120) * 10) / Math.max(1, imageWidth);
+    const diameterMm = Math.max(2, radiusOriginal * 2 * mmPerPixel);
+    const power = component.peak * 0.62 + component.score * 0.38;
+
+    let difficulty = "easy";
+    let difficultyLabel = "Facile";
+    if (diameterMm > 18 || power > 42 || component.aspect < 0.55 || component.aspect > 1.85) {
+      difficulty = "medium";
+      difficultyLabel = "Media";
+    }
+    if (diameterMm > 32 || power > 58 || component.radius > 17) {
+      difficulty = "hard";
+      difficultyLabel = "Difficile";
+    }
+
+    const confidence = clamp(Math.round(45 + power * 1.15 + component.fill * 18 - Math.abs(1 - component.aspect) * 10), 35, 96);
+    const depthScore = clamp(Math.round(power * 1.8), 1, 100);
+
+    return {
+      diameterMm: Math.round(diameterMm),
+      difficulty,
+      difficultyLabel,
+      confidence,
+      depthScore
+    };
+  }
+
+  async function analyzeDataUrl(dataUrl, userOptions = {}) {
+    const image = await loadImage(dataUrl);
+    const panelWidthCm = Number(userOptions.panelWidthCm || 120);
+    const sensitivity = Number(userOptions.sensitivity || 3);
+    const maxDetections = clamp(Number(userOptions.maxDetections || 90), 5, 160);
+    const activePanel = userOptions.panel || "Da definire";
+
+    const { imageData, scale } = imageToImageData(image, userOptions.maxSide || 920);
+    const { width, height } = imageData;
+    const gray = toGray(imageData);
+    const { score, edge } = buildScore(gray, width, height);
+    const s = stats(score, 3);
+
+    const sensitivityFactor = { 1: 2.55, 2: 2.15, 3: 1.78, 4: 1.46, 5: 1.22 }[sensitivity] || 1.78;
+    const threshold = Math.max(12, s.mean + s.std * sensitivityFactor);
+    const areaBase = width * height;
+    const components = connectedComponents(score, width, height, threshold, {
+      minArea: Math.max(8, Math.round(areaBase * 0.000018)),
+      maxArea: Math.max(90, Math.round(areaBase * 0.018)),
+      minRadius: Math.max(2.0, Math.min(width, height) * 0.003),
+      maxRadius: Math.max(12, Math.min(width, height) * 0.055)
+    });
+
+    const merged = mergeClose(components, maxDetections);
+    const detections = merged.map((component, index) => {
+      const c = classify(component, scale, image.naturalWidth || image.width, panelWidthCm);
+      return {
+        id: `D${String(index + 1).padStart(3, "0")}`,
+        number: index + 1,
+        x: Math.round(component.x / scale),
+        y: Math.round(component.y / scale),
+        radius: Math.round(component.radius / scale),
+        area: Math.round(component.area / (scale * scale)),
+        panel: activePanel,
+        ...c
+      };
+    });
+
+    const quality = qualityFromImage(gray, edge);
+    return {
+      version: VERSION,
+      width: image.naturalWidth || image.width,
+      height: image.naturalHeight || image.height,
+      analyzedWidth: width,
+      analyzedHeight: height,
+      threshold: Math.round(threshold),
+      quality,
+      detections,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  function drawOverlay(ctx, image, detections, options = {}) {
+    const canvas = ctx.canvas;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    if (!Array.isArray(detections)) return;
+
+    const scaleX = canvas.width / Math.max(1, image.naturalWidth || image.width);
+    const scaleY = canvas.height / Math.max(1, image.naturalHeight || image.height);
+    const colors = { easy: "#22c55e", medium: "#f59e0b", hard: "#ef4444" };
+
+    ctx.save();
+    ctx.lineWidth = Math.max(2, canvas.width * 0.003);
+    ctx.font = `900 ${Math.max(13, Math.round(canvas.width * 0.018))}px system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    for (const dent of detections) {
+      const x = dent.x * scaleX;
+      const y = dent.y * scaleY;
+      const r = Math.max(12, dent.radius * ((scaleX + scaleY) / 2));
+      const color = colors[dent.difficulty] || colors.medium;
+
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(x, y, Math.max(10, r * 0.36), 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      ctx.fillStyle = dent.difficulty === "medium" ? "#111827" : "#ffffff";
+      ctx.fillText(String(dent.number), x, y);
+    }
+    ctx.restore();
+
+    if (options.watermark !== false) {
+      ctx.save();
+      ctx.fillStyle = "rgba(2, 6, 23, 0.72)";
+      ctx.fillRect(12, 12, 250, 38);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "700 16px system-ui, sans-serif";
+      ctx.fillText(`DentVision AI · ${detections.length} bolli`, 26, 36);
+      ctx.restore();
+    }
+  }
+
+  window.DentVisionEngine = {
+    version: VERSION,
+    analyzeDataUrl,
+    drawOverlay,
+    loadImage
+  };
+})();
+
+  </script>
+  <script>
+(() => {
+  "use strict";
+
+  const STORAGE_DRAFT = "dentvision_v4_draft";
+  const STORAGE_ARCHIVE = "dentvision_v4_archive";
+  const VERSION = "4.0.0";
+
+  const $ = (id) => document.getElementById(id);
+  const dom = {};
+  const ids = [
+    "newCase", "saveCaseTop", "saveCase", "caseIdText", "draftStatus", "dashStatus", "dashPhotos", "dashDents", "dashHard", "dashHours", "dashQuote",
+    "clientName", "phone", "email", "carModel", "plate", "city", "status", "priority", "eventDate", "appointment", "insurer", "claimCode", "nextAction",
+    "photoInput", "cameraInput", "analyzePhoto", "clearDetections", "sensitivity", "sensitivityText", "panelWidthCm", "activePanel", "engineStatus",
+    "activePhotoName", "photoDentCount", "photoQuality", "photoCanvas", "canvasHint", "downloadMarkedPhoto", "detectionsList", "resultsNote",
+    "threeStatus", "car3d", "panelSummary", "manualDents", "globalDifficulty", "paintDamage", "finalPrice", "calculateQuote", "copySummary", "shareWhatsApp", "printReport", "quoteBox", "suggestedPrice", "estimatedHours", "quoteDents", "quoteBreakdown",
+    "caseNotes", "exportJson", "exportCsv", "importBackup", "search", "statusFilter", "archiveCount", "leads", "toast"
+  ];
+
+  for (const id of ids) dom[id] = $(id);
+
+  const emptyCase = () => ({
+    version: VERSION,
+    caseId: createCaseId(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    clientName: "",
+    phone: "",
+    email: "",
+    carModel: "",
+    plate: "",
+    city: "",
+    status: "Nuova",
+    priority: "Normale",
+    eventDate: "",
+    appointment: "",
+    insurer: "",
+    claimCode: "",
+    nextAction: "",
+    photos: [],
+    activePhotoId: null,
+    manualDents: 0,
+    globalDifficulty: "standard",
+    paintDamage: "no",
+    finalPrice: "",
+    quote: null,
+    caseNotes: ""
+  });
+
+  let state = emptyCase();
+  let archive = [];
+  let activeImage = null;
+  let isRestoring = false;
+
+  function createCaseId() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+    return `DV-${stamp}-${Math.floor(1000 + Math.random() * 9000)}`;
+  }
+
+  function toast(message) {
+    if (!dom.toast) return;
+    dom.toast.textContent = message;
+    dom.toast.classList.add("show");
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => dom.toast.classList.remove("show"), 2600);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>'"]/g, (char) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
+    }[char]));
+  }
+
+  function safeParse(json, fallback) {
+    try { return JSON.parse(json); } catch { return fallback; }
+  }
+
+  function saveDraft() {
+    if (isRestoring) return;
+    collectForm();
+    state.updatedAt = new Date().toISOString();
+    try {
+      localStorage.setItem(STORAGE_DRAFT, JSON.stringify(stripHeavyImagesForStorage(state)));
+      dom.draftStatus.textContent = `Bozza salvata · ${new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}`;
+    } catch (error) {
+      console.warn(error);
+      localStorage.setItem(STORAGE_DRAFT, JSON.stringify(stripHeavyImagesForStorage(state, true)));
+      dom.draftStatus.textContent = "Bozza salvata senza anteprime pesanti";
+    }
+    updateUI();
+  }
+
+  function stripHeavyImagesForStorage(input, removeData = false) {
+    const copy = structuredClone(input);
+    copy.photos = (copy.photos || []).map((photo) => ({
+      ...photo,
+      dataUrl: removeData ? "" : photo.dataUrl,
+      thumbnail: photo.thumbnail || ""
+    }));
+    return copy;
+  }
+
+  function loadDraft() {
+    const saved = safeParse(localStorage.getItem(STORAGE_DRAFT), null);
+    if (saved && saved.caseId) {
+      state = { ...emptyCase(), ...saved };
+    }
+  }
+
+  function loadArchive() {
+    archive = safeParse(localStorage.getItem(STORAGE_ARCHIVE), []);
+    if (!Array.isArray(archive)) archive = [];
+  }
+
+  function persistArchive() {
+    try {
+      localStorage.setItem(STORAGE_ARCHIVE, JSON.stringify(archive));
+    } catch (error) {
+      console.warn(error);
+      toast("Archivio troppo pesante. Esporta backup e alleggerisci le foto.");
+    }
+  }
+
+  function collectForm() {
+    const fields = ["clientName", "phone", "email", "carModel", "plate", "city", "status", "priority", "eventDate", "appointment", "insurer", "claimCode", "nextAction", "manualDents", "globalDifficulty", "paintDamage", "finalPrice", "caseNotes"];
+    for (const field of fields) {
+      if (dom[field]) state[field] = dom[field].value;
+    }
+    state.manualDents = Math.max(0, Number(state.manualDents || 0));
+  }
+
+  function fillForm() {
+    isRestoring = true;
+    const fields = ["clientName", "phone", "email", "carModel", "plate", "city", "status", "priority", "eventDate", "appointment", "insurer", "claimCode", "nextAction", "manualDents", "globalDifficulty", "paintDamage", "finalPrice", "caseNotes"];
+    for (const field of fields) {
+      if (dom[field]) dom[field].value = state[field] ?? "";
+    }
+    dom.caseIdText.textContent = state.caseId;
+    isRestoring = false;
+  }
+
+  function getActivePhoto() {
+    return state.photos.find((photo) => photo.id === state.activePhotoId) || state.photos[0] || null;
+  }
+
+  function totalDents() {
+    const photoDents = state.photos.reduce((sum, photo) => sum + (photo.detections?.length || 0), 0);
+    return photoDents + Math.max(0, Number(state.manualDents || 0));
+  }
+
+  function hardDents() {
+    return state.photos.reduce((sum, photo) => sum + (photo.detections || []).filter((d) => d.difficulty === "hard").length, 0);
+  }
+
+  function mediumDents() {
+    return state.photos.reduce((sum, photo) => sum + (photo.detections || []).filter((d) => d.difficulty === "medium").length, 0);
+  }
+
+  function allDetections() {
+    return state.photos.flatMap((photo) => (photo.detections || []).map((d) => ({ ...d, photoName: photo.name })));
+  }
+
+  function estimateHours(count = totalDents()) {
+    const hard = hardDents();
+    const medium = mediumDents();
+    const base = count * 0.035 + medium * 0.018 + hard * 0.04;
+    const diff = state.globalDifficulty === "difficile" ? 1.18 : state.globalDifficulty === "molto_difficile" ? 1.36 : 1;
+    return Math.max(count ? 0.5 : 0, base * diff);
+  }
+
+  function updateUI() {
+    collectForm();
+    dom.caseIdText.textContent = state.caseId;
+    dom.dashStatus.textContent = state.status || "Nuova";
+    dom.dashPhotos.textContent = String(state.photos.length);
+    dom.dashDents.textContent = String(totalDents());
+    dom.dashHard.textContent = String(hardDents());
+    const hours = estimateHours();
+    dom.dashHours.textContent = hours ? `${formatNumber(hours, 1)} h` : "—";
+    dom.dashQuote.textContent = state.quote?.suggestedPrice ? euro(state.quote.suggestedPrice) : "—";
+
+    const active = getActivePhoto();
+    dom.activePhotoName.textContent = active?.name || "Nessuna";
+    dom.photoDentCount.textContent = String(active?.detections?.length || 0);
+    dom.photoQuality.textContent = active?.quality?.label || "—";
+    dom.analyzePhoto.disabled = !active;
+    dom.clearDetections.disabled = !active || !(active.detections || []).length;
+    dom.downloadMarkedPhoto.disabled = !active;
+
+    renderDetections();
+    renderPanelSummary();
+    renderArchive();
+  }
+
+  function formatNumber(value, digits = 0) {
+    return Number(value || 0).toLocaleString("it-IT", { maximumFractionDigits: digits, minimumFractionDigits: digits });
+  }
+
+  function euro(value) {
+    return Number(value || 0).toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+  }
+
+  function sensitivityText(value) {
+    return ({ 1: "Molto prudente", 2: "Prudente", 3: "Normale", 4: "Sensibile", 5: "Molto sensibile" })[Number(value)] || "Normale";
+  }
+
+  async function handlePhotoFile(file) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast("Questo non sembra un'immagine. GitHub già basta come sofferenza.");
+      return;
+    }
+    const dataUrl = await fileToDataUrl(file);
+    const thumb = await makeThumbnail(dataUrl);
+    const image = await window.DentVisionEngine.loadImage(dataUrl);
+    const photo = {
+      id: crypto.randomUUID ? crypto.randomUUID() : `photo-${Date.now()}`,
+      name: file.name || `foto-${state.photos.length + 1}.jpg`,
+      type: file.type,
+      size: file.size,
+      dataUrl,
+      thumbnail: thumb,
+      width: image.naturalWidth || image.width,
+      height: image.naturalHeight || image.height,
+      panel: dom.activePanel.value,
+      detections: [],
+      quality: null,
+      createdAt: new Date().toISOString()
+    };
+    state.photos.unshift(photo);
+    state.activePhotoId = photo.id;
+    activeImage = image;
+    drawActivePhoto();
+    dom.canvasHint.textContent = "Foto caricata. Premi Analizza foto.";
+    saveDraft();
+    toast("Foto caricata. Ora analizzala.");
+  }
+
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("File non leggibile"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function makeThumbnail(dataUrl) {
+    const image = await window.DentVisionEngine.loadImage(dataUrl);
+    const maxSide = 260;
+    const scale = Math.min(1, maxSide / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round((image.naturalWidth || image.width) * scale);
+    canvas.height = Math.round((image.naturalHeight || image.height) * scale);
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.68);
+  }
+
+  async function ensureActiveImage() {
+    const active = getActivePhoto();
+    if (!active?.dataUrl) return null;
+    if (!activeImage || activeImage.src !== active.dataUrl) {
+      activeImage = await window.DentVisionEngine.loadImage(active.dataUrl);
+    }
+    return activeImage;
+  }
+
+  async function drawActivePhoto() {
+    const active = getActivePhoto();
+    const ctx = dom.photoCanvas.getContext("2d");
+    if (!active?.dataUrl) {
+      ctx.clearRect(0, 0, dom.photoCanvas.width, dom.photoCanvas.height);
+      return;
+    }
+    const image = await ensureActiveImage();
+    const maxW = 1400;
+    const scale = Math.min(1, maxW / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
+    dom.photoCanvas.width = Math.round((image.naturalWidth || image.width) * scale);
+    dom.photoCanvas.height = Math.round((image.naturalHeight || image.height) * scale);
+    window.DentVisionEngine.drawOverlay(ctx, image, active.detections || [], { watermark: true });
+  }
+
+  async function analyzeActivePhoto() {
+    const active = getActivePhoto();
+    if (!active?.dataUrl) return;
+    if (!window.DentVisionEngine?.analyzeDataUrl) {
+      toast("Motore non caricato. Controlla dent-engine.js.");
+      return;
+    }
+
+    dom.engineStatus.className = "status-pill warning";
+    dom.engineStatus.textContent = "Analisi in corso";
+    dom.analyzePhoto.disabled = true;
+    dom.canvasHint.textContent = "Sto cercando bollature...";
+
+    try {
+      const result = await window.DentVisionEngine.analyzeDataUrl(active.dataUrl, {
+        sensitivity: dom.sensitivity.value,
+        panelWidthCm: dom.panelWidthCm.value,
+        panel: dom.activePanel.value,
+        maxDetections: 120
+      });
+      active.detections = result.detections.map((dent) => ({
+        ...dent,
+        panel: dom.activePanel.value || "Da definire",
+        note: ""
+      }));
+      active.quality = result.quality;
+      active.panel = dom.activePanel.value;
+      active.analysis = {
+        version: result.version,
+        threshold: result.threshold,
+        createdAt: result.createdAt,
+        analyzedWidth: result.analyzedWidth,
+        analyzedHeight: result.analyzedHeight
+      };
+      dom.engineStatus.className = "status-pill ok";
+      dom.engineStatus.textContent = `Analisi pronta · ${active.detections.length} rilevati`;
+      dom.canvasHint.textContent = active.detections.length ? "Bolli segnati sulla foto." : "Nessun bollo chiaro rilevato. Prova più luce o sensibilità più alta.";
+      await drawActivePhoto();
+      saveDraft();
+      toast(`Analisi completata: ${active.detections.length} zone sospette.`);
+    } catch (error) {
+      console.error(error);
+      dom.engineStatus.className = "status-pill bad";
+      dom.engineStatus.textContent = "Errore analisi";
+      toast("Analisi fallita. Foto troppo pesante o formato non gestito.");
+    } finally {
+      dom.analyzePhoto.disabled = false;
+      updateUI();
+    }
+  }
+
+  function clearDetections() {
+    const active = getActivePhoto();
+    if (!active) return;
+    active.detections = [];
+    active.quality = null;
+    drawActivePhoto();
+    saveDraft();
+    toast("Rilevamenti cancellati.");
+  }
+
+  function renderDetections() {
+    const detections = allDetections();
+    dom.resultsNote.textContent = detections.length ? `${detections.length} rilevamenti totali nella pratica.` : "Nessun risultato.";
+    if (!detections.length) {
+      dom.detectionsList.innerHTML = `<div class="mini-note">Carica una foto e premi Analizza foto. Sconvolgente: il pulsante serve a fare la cosa scritta sul pulsante.</div>`;
+      return;
+    }
+
+    dom.detectionsList.innerHTML = detections.map((dent, index) => `
+      <article class="detection-row">
+        <div class="detection-number ${dent.difficulty}">${index + 1}</div>
+        <div>
+          <div class="detection-title">${escapeHtml(dent.panel || "Da definire")} · ${escapeHtml(dent.photoName || "Foto")}</div>
+          <div class="detection-meta">Diametro stimato ${dent.diameterMm || "—"} mm · profondità ${dent.depthScore || "—"}/100 · confidenza ${dent.confidence || "—"}%</div>
+        </div>
+        <span class="difficulty-tag ${dent.difficulty}">${escapeHtml(dent.difficultyLabel || "Media")}</span>
+      </article>
+    `).join("");
+  }
+
+  function renderPanelSummary() {
+    const detections = allDetections();
+    if (!detections.length) {
+      dom.panelSummary.textContent = "Nessun pannello analizzato.";
+      return;
+    }
+    const panels = new Map();
+    for (const d of detections) {
+      const key = d.panel || "Da definire";
+      panels.set(key, (panels.get(key) || 0) + 1);
+    }
+    dom.panelSummary.innerHTML = Array.from(panels.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([panel, count]) => `<strong>${escapeHtml(panel)}</strong>: ${count} bolli`)
+      .join(" · ");
+  }
+
+  function calculateQuote() {
+    collectForm();
+    const count = totalDents();
+    let base = 0;
+    if (count <= 0) base = 0;
+    else if (count <= 50) base = 350;
+    else if (count <= 200) base = 550;
+    else if (count <= 300) base = 750;
+    else if (count <= 550) base = 950;
+    else base = 1150;
+
+    const medium = mediumDents();
+    const hard = hardDents();
+    let multiplier = 1;
+    if (state.globalDifficulty === "difficile") multiplier += 0.14;
+    if (state.globalDifficulty === "molto_difficile") multiplier += 0.28;
+    if (state.paintDamage === "si") multiplier += 0.18;
+    multiplier += Math.min(0.24, hard * 0.006 + medium * 0.002);
+
+    const suggestedPrice = Math.round((base * multiplier) / 10) * 10;
+    const hours = estimateHours(count);
+    const breakdown = [
+      `Base ${euro(base)} per ${count} bolli`,
+      `${hard} difficili`,
+      `${medium} medi`,
+      state.paintDamage === "si" ? "vernice da valutare" : "vernice indicata integra",
+      `moltiplicatore x${formatNumber(multiplier, 2)}`
+    ].join(" · ");
+
+    state.quote = { count, base, multiplier, suggestedPrice, hours, breakdown, createdAt: new Date().toISOString() };
+    dom.quoteBox.classList.remove("hidden");
+    dom.suggestedPrice.textContent = suggestedPrice ? euro(suggestedPrice) : "—";
+    dom.estimatedHours.textContent = hours ? `${formatNumber(hours, 1)} h` : "—";
+    dom.quoteDents.textContent = String(count);
+    dom.quoteBreakdown.textContent = breakdown;
+    saveDraft();
+    toast("Preventivo calcolato.");
+  }
+
+  function buildSummary() {
+    collectForm();
+    const quote = state.quote;
+    const final = Number(state.finalPrice || 0);
+    const priceText = final ? euro(final) : quote?.suggestedPrice ? euro(quote.suggestedPrice) : "da definire";
+    return [
+      `DentVision AI - Pratica ${state.caseId}`,
+      `Cliente: ${state.clientName || "—"}`,
+      `Telefono: ${state.phone || "—"}`,
+      `Auto: ${state.carModel || "—"}`,
+      `Targa/rif.: ${state.plate || "—"}`,
+      `Città: ${state.city || "—"}`,
+      `Stato: ${state.status || "Nuova"}`,
+      `Bolli rilevati: ${totalDents()}`,
+      `Foto: ${state.photos.length}`,
+      `Stima lavoro: ${formatNumber(estimateHours(), 1)} h`,
+      `Preventivo: ${priceText}`,
+      state.nextAction ? `Prossima azione: ${state.nextAction}` : "",
+      state.caseNotes ? `Note: ${state.caseNotes}` : ""
+    ].filter(Boolean).join("\n");
+  }
+
+  async function copySummary() {
+    const summary = buildSummary();
+    try {
+      await navigator.clipboard.writeText(summary);
+      toast("Riepilogo copiato.");
+    } catch {
+      const area = document.createElement("textarea");
+      area.value = summary;
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+      toast("Riepilogo copiato.");
+    }
+  }
+
+  function shareWhatsApp() {
+    const summary = encodeURIComponent(buildSummary());
+    window.open(`https://wa.me/?text=${summary}`, "_blank", "noopener,noreferrer");
+  }
+
+  function printReport() {
+    calculateQuote();
+    window.print();
+  }
+
+  async function downloadMarkedPhoto() {
+    const active = getActivePhoto();
+    if (!active) return;
+    await drawActivePhoto();
+    const link = document.createElement("a");
+    link.download = `${state.caseId}-foto-segnata.png`;
+    link.href = dom.photoCanvas.toDataURL("image/png");
+    link.click();
+  }
+
+  function saveCurrentCase() {
+    collectForm();
+    state.updatedAt = new Date().toISOString();
+    const existingIndex = archive.findIndex((item) => item.caseId === state.caseId);
+    const archived = stripHeavyImagesForStorage(state, false);
+    if (existingIndex >= 0) archive[existingIndex] = structuredClone(archived);
+    else archive.unshift(structuredClone(archived));
+    persistArchive();
+    saveDraft();
+    renderArchive();
+    toast("Pratica salvata in archivio.");
+  }
+
+  function renderArchive() {
+    const q = (dom.search.value || "").toLowerCase().trim();
+    const status = dom.statusFilter.value || "";
+    const items = archive.filter((item) => {
+      const haystack = [item.caseId, item.clientName, item.phone, item.carModel, item.plate, item.city, item.status, item.caseNotes]
+        .join(" ").toLowerCase();
+      return (!q || haystack.includes(q)) && (!status || item.status === status);
+    });
+    dom.archiveCount.textContent = `${archive.length} pratiche`;
+    if (!items.length) {
+      dom.leads.innerHTML = `<div class="mini-note">Nessuna pratica salvata.</div>`;
+      return;
+    }
+    dom.leads.innerHTML = items.map((item) => {
+      const count = (item.photos || []).reduce((sum, p) => sum + (p.detections?.length || 0), 0) + Number(item.manualDents || 0);
+      const price = item.finalPrice || item.quote?.suggestedPrice || "";
+      return `<article class="lead-row">
+        <div>
+          <strong>${escapeHtml(item.clientName || item.caseId)} · ${escapeHtml(item.carModel || "Veicolo")}</strong>
+          <span>${escapeHtml(item.plate || "Nessuna targa")} · ${escapeHtml(item.city || "Località non indicata")} · ${escapeHtml(item.status || "Nuova")}</span>
+          <span>${count} bolli · ${item.photos?.length || 0} foto · ${price ? euro(price) : "prezzo da definire"}</span>
+        </div>
+        <div class="lead-actions">
+          <button class="btn ghost" type="button" data-load="${escapeHtml(item.caseId)}">Apri</button>
+          <button class="btn danger" type="button" data-delete="${escapeHtml(item.caseId)}">Elimina</button>
+        </div>
+      </article>`;
+    }).join("");
+  }
+
+  function loadCase(caseId) {
+    const found = archive.find((item) => item.caseId === caseId);
+    if (!found) return;
+    state = { ...emptyCase(), ...structuredClone(found) };
+    activeImage = null;
+    fillForm();
+    drawActivePhoto();
+    saveDraft();
+    updateUI();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    toast("Pratica aperta.");
+  }
+
+  function deleteCase(caseId) {
+    archive = archive.filter((item) => item.caseId !== caseId);
+    persistArchive();
+    renderArchive();
+    toast("Pratica eliminata dall'archivio.");
+  }
+
+  function newCase() {
+    if (totalDents() || state.clientName || state.carModel) {
+      const ok = confirm("Creare una nuova pratica? La bozza attuale resta salvata solo se l'hai messa in archivio.");
+      if (!ok) return;
+    }
+    state = emptyCase();
+    activeImage = null;
+    fillForm();
+    const ctx = dom.photoCanvas.getContext("2d");
+    ctx.clearRect(0, 0, dom.photoCanvas.width, dom.photoCanvas.height);
+    dom.canvasHint.textContent = "Carica una foto per iniziare";
+    saveDraft();
+    updateUI();
+    toast("Nuova pratica creata.");
+  }
+
+  function exportJson() {
+    const payload = { version: VERSION, exportedAt: new Date().toISOString(), draft: state, archive };
+    downloadBlob(JSON.stringify(payload, null, 2), `dentvision-backup-${new Date().toISOString().slice(0, 10)}.json`, "application/json");
+  }
+
+  function exportCsv() {
+    const rows = [["caseId", "cliente", "telefono", "auto", "targa", "citta", "stato", "foto", "bolli", "preventivo", "aggiornata"]];
+    for (const item of archive) {
+      const count = (item.photos || []).reduce((sum, p) => sum + (p.detections?.length || 0), 0) + Number(item.manualDents || 0);
+      rows.push([item.caseId, item.clientName, item.phone, item.carModel, item.plate, item.city, item.status, item.photos?.length || 0, count, item.finalPrice || item.quote?.suggestedPrice || "", item.updatedAt || ""]);
+    }
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    downloadBlob(csv, `dentvision-archivio-${new Date().toISOString().slice(0, 10)}.csv`, "text/csv;charset=utf-8");
+  }
+
+  function downloadBlob(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function importBackup(file) {
+    if (!file) return;
+    const text = await file.text();
+    const payload = safeParse(text, null);
+    if (!payload) {
+      toast("Backup non valido.");
+      return;
+    }
+    if (Array.isArray(payload.archive)) archive = payload.archive;
+    if (payload.draft?.caseId) state = { ...emptyCase(), ...payload.draft };
+    persistArchive();
+    fillForm();
+    drawActivePhoto();
+    saveDraft();
+    updateUI();
+    toast("Backup importato.");
+  }
+
+  function setupModelViewer() {
+    const setOk = () => {
+      dom.threeStatus.className = "status-pill ok";
+      dom.threeStatus.textContent = "3D pronto";
+    };
+    const setBad = () => {
+      dom.threeStatus.className = "status-pill bad";
+      dom.threeStatus.textContent = "3D non caricato";
+    };
+    window.addEventListener("dentvision-model-ready", setOk);
+    window.addEventListener("dentvision-model-failed", setBad);
+    dom.car3d?.addEventListener("load", setOk);
+    dom.car3d?.addEventListener("error", setBad);
+
+    document.querySelectorAll("[data-view]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const view = button.dataset.view;
+        const mv = dom.car3d;
+        if (!mv) return;
+        const views = {
+          front: "0deg 70deg 105%",
+          left: "-90deg 70deg 105%",
+          right: "90deg 70deg 105%",
+          rear: "180deg 70deg 105%",
+          top: "0deg 0deg 120%",
+          reset: "-35deg 68deg 105%"
+        };
+        mv.cameraOrbit = views[view] || views.reset;
+      });
+    });
+  }
+
+  function bindEvents() {
+    const formFields = ["clientName", "phone", "email", "carModel", "plate", "city", "status", "priority", "eventDate", "appointment", "insurer", "claimCode", "nextAction", "manualDents", "globalDifficulty", "paintDamage", "finalPrice", "caseNotes"];
+    for (const field of formFields) {
+      dom[field]?.addEventListener("input", debounce(saveDraft, 250));
+      dom[field]?.addEventListener("change", saveDraft);
+    }
+
+    dom.newCase.addEventListener("click", newCase);
+    dom.saveCaseTop.addEventListener("click", saveCurrentCase);
+    dom.saveCase.addEventListener("click", saveCurrentCase);
+
+    dom.photoInput.addEventListener("change", (event) => handlePhotoFile(event.target.files?.[0]));
+    dom.cameraInput.addEventListener("change", (event) => handlePhotoFile(event.target.files?.[0]));
+    dom.analyzePhoto.addEventListener("click", analyzeActivePhoto);
+    dom.clearDetections.addEventListener("click", clearDetections);
+    dom.downloadMarkedPhoto.addEventListener("click", downloadMarkedPhoto);
+
+    dom.sensitivity.addEventListener("input", () => {
+      dom.sensitivityText.textContent = sensitivityText(dom.sensitivity.value);
+    });
+
+    dom.calculateQuote.addEventListener("click", calculateQuote);
+    dom.copySummary.addEventListener("click", copySummary);
+    dom.shareWhatsApp.addEventListener("click", shareWhatsApp);
+    dom.printReport.addEventListener("click", printReport);
+    dom.exportJson.addEventListener("click", exportJson);
+    dom.exportCsv.addEventListener("click", exportCsv);
+    dom.importBackup.addEventListener("change", (event) => importBackup(event.target.files?.[0]));
+    dom.search.addEventListener("input", renderArchive);
+    dom.statusFilter.addEventListener("change", renderArchive);
+
+    dom.leads.addEventListener("click", (event) => {
+      const load = event.target.closest("[data-load]")?.dataset.load;
+      const del = event.target.closest("[data-delete]")?.dataset.delete;
+      if (load) loadCase(load);
+      if (del && confirm("Eliminare questa pratica dall'archivio?")) deleteCase(del);
+    });
+  }
+
+  function debounce(fn, wait) {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn(...args), wait);
+    };
+  }
+
+  async function init() {
+    if (!window.DentVisionEngine) {
+      dom.engineStatus.className = "status-pill bad";
+      dom.engineStatus.textContent = "Motore assente";
+      toast("dent-engine.js non è caricato.");
+    } else {
+      dom.engineStatus.className = "status-pill ok";
+      dom.engineStatus.textContent = `Motore pronto v${window.DentVisionEngine.version}`;
+    }
+
+    loadArchive();
+    loadDraft();
+    fillForm();
+    bindEvents();
+    setupModelViewer();
+    dom.sensitivityText.textContent = sensitivityText(dom.sensitivity.value);
+    await drawActivePhoto();
+    updateUI();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+
+  </script>
 </body>
 </html>
