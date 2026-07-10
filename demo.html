@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DentVision AI v3 - Rilevamento Bollature</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <h1>DentVision AI v3</h1>
+      <p>Primo motore locale per rilevare, numerare e classificare bollature da una foto.</p>
+    </section>
+
+    <section class="panel">
+      <label class="upload">
+        <input id="photoInput" type="file" accept="image/*">
+        <span>Carica foto lamiera</span>
+      </label>
+
+      <div class="controls">
+        <label>Sensibilità
+          <input id="sensitivity" type="range" min="0.75" max="2" value="1.15" step="0.05">
+        </label>
+        <button id="reanalyze" disabled>Rianalizza</button>
+        <button id="exportJson" disabled>Esporta dati</button>
+      </div>
+    </section>
+
+    <section class="viewer" id="viewer" hidden>
+      <div class="image-wrap">
+        <img id="preview" alt="Foto analizzata">
+        <canvas id="overlay"></canvas>
+      </div>
+    </section>
+
+    <section class="results" id="results" hidden>
+      <h2>Risultato analisi</h2>
+      <div id="summary" class="summary"></div>
+      <div id="dentList" class="dent-list"></div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { DentEngine } from './dent-engine.js';
+
+    const input = document.getElementById('photoInput');
+    const preview = document.getElementById('preview');
+    const overlay = document.getElementById('overlay');
+    const viewer = document.getElementById('viewer');
+    const results = document.getElementById('results');
+    const summary = document.getElementById('summary');
+    const dentList = document.getElementById('dentList');
+    const sensitivity = document.getElementById('sensitivity');
+    const reanalyze = document.getElementById('reanalyze');
+    const exportJson = document.getElementById('exportJson');
+
+    let currentFile = null;
+    let currentResult = null;
+
+    input.addEventListener('change', async () => {
+      currentFile = input.files?.[0];
+      if (!currentFile) return;
+      preview.src = URL.createObjectURL(currentFile);
+      await preview.decode();
+      viewer.hidden = false;
+      await runAnalysis();
+    });
+
+    reanalyze.addEventListener('click', runAnalysis);
+    window.addEventListener('resize', () => {
+      if (currentResult) new DentEngine().drawOverlay(preview, currentResult, overlay);
+    });
+
+    exportJson.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(currentResult, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'dentvision-analisi.json';
+      a.click();
+    });
+
+    async function runAnalysis() {
+      if (!currentFile) return;
+      reanalyze.disabled = true;
+      exportJson.disabled = true;
+      summary.textContent = 'Analisi in corso...';
+      results.hidden = false;
+
+      const engine = new DentEngine({ sensitivity: Number(sensitivity.value) });
+      currentResult = await engine.analyzeImage(currentFile);
+      engine.drawOverlay(preview, currentResult, overlay);
+      renderResults(currentResult);
+      reanalyze.disabled = false;
+      exportJson.disabled = false;
+    }
+
+    function renderResults(result) {
+      const easy = result.dents.filter(d => d.difficulty === 'facile').length;
+      const medium = result.dents.filter(d => d.difficulty === 'media').length;
+      const hard = result.dents.filter(d => d.difficulty === 'difficile').length;
+      summary.innerHTML = `
+        <strong>${result.dents.length}</strong> zone sospette trovate<br>
+        <span class="green">${easy} facili</span> ·
+        <span class="yellow">${medium} medie</span> ·
+        <span class="red">${hard} difficili</span>
+      `;
+      dentList.innerHTML = result.dents.map((d, i) => `
+        <article class="dent-card">
+          <b>#${i + 1} · ${d.difficulty.toUpperCase()}</b>
+          <span>Confidenza: ${d.confidence}%</span>
+          <span>Diametro stimato: ${d.diameterPx}px</span>
+          <span>Profondità stimata: ${d.depthScore}/100</span>
+          <span>Difficoltà: ${d.difficultyScore}/100</span>
+        </article>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
