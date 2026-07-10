@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
   <meta name="description" content="DentVision AI v4 - gestione pratiche PDR, analisi locale foto, mappa danni e preventivi.">
-  <title>DentVision AI v4</title>
+  <title>DentVision AI v4.1 Fix Foto e 3D</title>
   <style>
 :root {
   color-scheme: dark;
@@ -249,6 +249,26 @@ input:focus, select:focus, textarea:focus { border-color: rgba(96, 165, 250, 0.9
   opacity: 0;
   pointer-events: none;
 }
+.real-upload-box {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(96, 165, 250, .28);
+  border-radius: 18px;
+  background: rgba(59,130,246,.10);
+}
+.real-upload-box strong { font-size: 1.02rem; }
+.real-upload-box input[type="file"] {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px dashed rgba(191,219,254,.55);
+  background: rgba(2,6,23,.42);
+  color: var(--text);
+}
+.real-upload-box .small { margin: 0; }
 .file-button.camera { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
 .file-button.gallery { background: linear-gradient(135deg, #0f766e, #14b8a6); }
 .file-button.mini-upload { background: rgba(255,255,255,0.08); }
@@ -375,13 +395,14 @@ input:focus, select:focus, textarea:focus { border-color: rgba(96, 165, 250, 0.9
 }
 model-viewer { width: 100%; height: 100%; }
 .model-fallback {
-  display: grid;
+  display: none;
   place-items: center;
   height: 100%;
   padding: 22px;
   color: var(--muted);
   text-align: center;
 }
+model-viewer:not(:defined) .model-fallback { display: grid; }
 .view-controls { margin-top: 12px; }
 .panel-summary { margin-top: 14px; color: var(--muted); }
 
@@ -501,7 +522,7 @@ model-viewer { width: 100%; height: 100%; }
     <header class="hero">
       <div class="hero-grid">
         <div>
-          <div class="eyebrow">DentVision AI · v4.0 locale</div>
+          <div class="eyebrow">DentVision AI · v4.1 fix foto e 3D</div>
           <h1>Gestione danni grandine</h1>
           <p class="hero-text">Pratica cliente, analisi foto, mappa dei bolli, auto 3D, preventivo, archivio e report. Tutto locale, senza API obbligatorie.</p>
         </div>
@@ -593,13 +614,19 @@ model-viewer { width: 100%; height: 100%; }
 
         <div class="analysis-layout">
           <aside class="analysis-controls">
-            <input id="photoInput" class="visually-hidden-file" type="file" accept="image/*">
-            <input id="cameraInput" class="visually-hidden-file" type="file" accept="image/*" capture="environment">
+            <div class="real-upload-box">
+              <strong>1 · Carica foto</strong>
+              <p class="small">Usa uno di questi due campi. Sono visibili apposta: Android e i browser, quando possono complicare la vita, lo fanno con metodo.</p>
+              <label>Scatta foto con fotocamera
+                <input id="cameraInput" type="file" accept="image/*" capture="environment">
+              </label>
+              <label>Scegli foto dalla galleria
+                <input id="photoInput" type="file" accept="image/*">
+              </label>
+            </div>
 
             <div class="button-stack">
-              <label for="cameraInput" class="file-button camera">Scatta foto</label>
-              <label for="photoInput" class="file-button gallery">Apri galleria</label>
-              <button id="analyzePhoto" type="button" class="btn ai" disabled>Analizza foto</button>
+              <button id="analyzePhoto" type="button" class="btn ai" disabled>2 · Analizza foto</button>
               <button id="clearDetections" type="button" class="btn danger" disabled>Cancella rilevamenti</button>
             </div>
 
@@ -664,7 +691,8 @@ model-viewer { width: 100%; height: 100%; }
             src="generic_sedan_car.glb"
             alt="Modello 3D auto"
             camera-controls
-            touch-action="pan-y"
+            disable-tap
+            touch-action="none"
             interaction-prompt="none"
             shadow-intensity="1.2"
             environment-image="neutral"
@@ -1384,34 +1412,44 @@ model-viewer { width: 100%; height: 100%; }
 
   async function handlePhotoFile(file) {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast("Questo non sembra un'immagine. GitHub già basta come sofferenza.");
-      return;
+    try {
+      if (!file.type || !file.type.startsWith("image/")) {
+        toast("Questo non sembra un'immagine. Scegli una foto vera della lamiera.");
+        return;
+      }
+      dom.canvasHint.textContent = "Caricamento foto...";
+      const dataUrl = await fileToDataUrl(file);
+      const thumb = await makeThumbnail(dataUrl);
+      const image = await window.DentVisionEngine.loadImage(dataUrl);
+      const photo = {
+        id: crypto.randomUUID ? crypto.randomUUID() : `photo-${Date.now()}`,
+        name: file.name || `foto-${state.photos.length + 1}.jpg`,
+        type: file.type,
+        size: file.size,
+        dataUrl,
+        thumbnail: thumb,
+        width: image.naturalWidth || image.width,
+        height: image.naturalHeight || image.height,
+        panel: dom.activePanel.value,
+        detections: [],
+        quality: null,
+        createdAt: new Date().toISOString()
+      };
+      state.photos.unshift(photo);
+      state.activePhotoId = photo.id;
+      activeImage = image;
+      drawActivePhoto();
+      updateUI();
+      dom.canvasHint.textContent = "Foto caricata. Premi Analizza foto.";
+      if (dom.photoInput) dom.photoInput.value = "";
+      if (dom.cameraInput) dom.cameraInput.value = "";
+      saveDraft();
+      toast("Foto caricata. Ora premi Analizza foto.");
+    } catch (error) {
+      console.error(error);
+      dom.canvasHint.textContent = "Foto non caricata. Prova con JPG/PNG/WebP, non HEIC.";
+      toast("Non riesco a leggere questa foto. Prova con JPG, PNG o uno screenshot della foto.");
     }
-    const dataUrl = await fileToDataUrl(file);
-    const thumb = await makeThumbnail(dataUrl);
-    const image = await window.DentVisionEngine.loadImage(dataUrl);
-    const photo = {
-      id: crypto.randomUUID ? crypto.randomUUID() : `photo-${Date.now()}`,
-      name: file.name || `foto-${state.photos.length + 1}.jpg`,
-      type: file.type,
-      size: file.size,
-      dataUrl,
-      thumbnail: thumb,
-      width: image.naturalWidth || image.width,
-      height: image.naturalHeight || image.height,
-      panel: dom.activePanel.value,
-      detections: [],
-      quality: null,
-      createdAt: new Date().toISOString()
-    };
-    state.photos.unshift(photo);
-    state.activePhotoId = photo.id;
-    activeImage = image;
-    drawActivePhoto();
-    dom.canvasHint.textContent = "Foto caricata. Premi Analizza foto.";
-    saveDraft();
-    toast("Foto caricata. Ora analizzala.");
   }
 
   function fileToDataUrl(file) {
@@ -1777,18 +1815,25 @@ model-viewer { width: 100%; height: 100%; }
   }
 
   function setupModelViewer() {
+    const fallback = document.getElementById("modelFallback");
     const setOk = () => {
       dom.threeStatus.className = "status-pill ok";
       dom.threeStatus.textContent = "3D pronto";
+      if (fallback) fallback.style.display = "none";
     };
     const setBad = () => {
       dom.threeStatus.className = "status-pill bad";
       dom.threeStatus.textContent = "3D non caricato";
+      if (fallback) fallback.style.display = "grid";
     };
     window.addEventListener("dentvision-model-ready", setOk);
     window.addEventListener("dentvision-model-failed", setBad);
     dom.car3d?.addEventListener("load", setOk);
+    dom.car3d?.addEventListener("model-visibility", setOk);
     dom.car3d?.addEventListener("error", setBad);
+    setTimeout(() => {
+      if (customElements.get("model-viewer") && dom.car3d) setOk();
+    }, 1800);
 
     document.querySelectorAll("[data-view]").forEach((button) => {
       button.addEventListener("click", () => {
