@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f172a">
   <meta name="description" content="DentVision AI v4 - gestione pratiche PDR, analisi locale foto, mappa danni e preventivi.">
-  <title>DentVision AI v4.2 Zone 3D e Foto</title>
+  <title>DentVision AI v4.3 Analisi PDR Professionale</title>
   <style>
 :root {
   color-scheme: dark;
@@ -516,6 +516,90 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
   object-fit: cover;
   display: block;
 }
+
+.pdr-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 14px 0 16px;
+}
+.pdr-mini-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 13px;
+  background: rgba(255,255,255,.05);
+}
+.pdr-mini-card span { display: block; color: var(--muted); font-size: .84rem; }
+.pdr-mini-card strong { display: block; margin-top: 4px; font-size: 1.15rem; }
+.pdr-report { display: grid; gap: 12px; }
+.pdr-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(2,6,23,.34);
+}
+.pdr-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.pdr-card-title { font-weight: 1000; }
+.pdr-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+}
+.pdr-item {
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px;
+  padding: 10px;
+  background: rgba(255,255,255,.04);
+}
+.pdr-item span { display: block; color: var(--muted); font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.pdr-item strong { display: block; margin-top: 3px; }
+.risk-low { color: #bbf7d0; }
+.risk-medium { color: #fde68a; }
+.risk-high { color: #fecaca; }
+.pdr-zone-box {
+  border: 1px solid rgba(139,92,246,.36);
+  background: linear-gradient(135deg, rgba(139,92,246,.12), rgba(37,99,235,.08));
+  border-radius: 18px;
+  padding: 14px;
+  margin: 14px 0;
+}
+.pdr-zone-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.pdr-zone-result { display: grid; gap: 8px; }
+.pdr-zone-result div {
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 13px;
+  padding: 9px 10px;
+  background: rgba(2,6,23,.28);
+}
+.pdr-zone-result span { color: var(--muted); font-size: .8rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; display: block; }
+.photo-kind-badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  border-radius: 999px;
+  padding: 3px 7px;
+  font-size: .72rem;
+  font-weight: 900;
+  background: rgba(15,23,42,.86);
+  border: 1px solid rgba(255,255,255,.22);
+}
+@media (max-width: 860px) {
+  .pdr-overview, .pdr-grid { grid-template-columns: 1fr; }
+  .pdr-card-head, .pdr-zone-head { align-items: stretch; flex-direction: column; }
+}
+
 .zone-photo-card button {
   position: absolute;
   right: 6px;
@@ -649,7 +733,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     <header class="hero">
       <div class="hero-grid">
         <div>
-          <div class="eyebrow">DentVision AI · v4.2 zone 3D e foto</div>
+          <div class="eyebrow">DentVision AI · v4.3 analisi PDR professionale</div>
           <h1>Gestione danni grandine</h1>
           <p class="hero-text">Pratica cliente, analisi foto, mappa dei bolli, auto 3D, preventivo, archivio e report. Tutto locale, senza API obbligatorie.</p>
         </div>
@@ -677,6 +761,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
       <a href="#pratica">Pratica</a>
       <a href="#analisi">Analisi foto</a>
       <a href="#mappa">Auto 3D</a>
+      <a href="#pdr">Analisi PDR</a>
       <a href="#preventivo">Preventivo</a>
       <a href="#archivio">Archivio</a>
     </nav>
@@ -847,10 +932,23 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
         <div id="zonesList" class="zones-list"></div>
       </section>
 
+
+      <section id="pdr" class="card highlight-card">
+        <div class="section-title">
+          <div>
+            <span class="section-kicker">04 · Analisi PDR</span>
+            <h2>Analisi professionale per zona</h2>
+            <p class="hint">Qui l'app trasforma le zone 3D in indicazioni operative: attrezzo, accesso, direzione di spinta, rischio vernice e tempo stimato. Non sostituisce il tuo occhio, finalmente: lo aiuta.</p>
+          </div>
+        </div>
+        <div id="pdrOverview" class="pdr-overview"></div>
+        <div id="pdrReport" class="pdr-report"></div>
+      </section>
+
       <section id="preventivo" class="card">
         <div class="section-title">
           <div>
-            <span class="section-kicker">04 · Preventivo</span>
+            <span class="section-kicker">05 · Preventivo</span>
             <h2>Stima economica e tempi</h2>
           </div>
         </div>
@@ -896,7 +994,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
       <section class="card">
         <div class="section-title">
           <div>
-            <span class="section-kicker">05 · Note</span>
+            <span class="section-kicker">06 · Note</span>
             <h2>Osservazioni generali</h2>
           </div>
         </div>
@@ -906,7 +1004,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
       <section id="archivio" class="card">
         <div class="section-title">
           <div>
-            <span class="section-kicker">06 · Archivio</span>
+            <span class="section-kicker">07 · Archivio</span>
             <h2>Pratiche salvate</h2>
           </div>
           <span id="archiveCount" class="mini-note">0 pratiche</span>
@@ -986,13 +1084,65 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
           </select>
         </label>
         <label>Riferimento zona<input id="zoneReference" placeholder="Es. vicino nervatura, centro porta, bordo cofano"></label>
+        <label>Diametro medio
+          <div class="inline-input"><input id="zoneDiameter" type="number" min="3" max="120" step="1" value="18" inputmode="numeric"><span>mm</span></div>
+        </label>
+        <label>Profondità
+          <select id="zoneDepth">
+            <option value="lieve">Lieve</option>
+            <option value="media">Media</option>
+            <option value="forte">Forte</option>
+          </select>
+        </label>
+        <label>Linee di tensione / nervatura
+          <select id="zoneTension">
+            <option value="nessuna">Nessuna evidente</option>
+            <option value="lieve">Leggera tensione</option>
+            <option value="marcata">Tensione marcata</option>
+            <option value="nervatura">Su nervatura / bordo</option>
+          </select>
+        </label>
+        <label>Vernice zona
+          <select id="zonePaint">
+            <option value="integra">Integra</option>
+            <option value="da_valutare">Da valutare</option>
+            <option value="danneggiata">Danneggiata</option>
+          </select>
+        </label>
+        <label>Accesso stimato
+          <select id="zoneAccess">
+            <option value="auto">Decidi automaticamente</option>
+            <option value="dietro">Da dietro con leva</option>
+            <option value="colla">Tiro con colla</option>
+            <option value="misto">Misto leva + colla</option>
+            <option value="smontaggio">Smontaggio consigliato</option>
+          </select>
+        </label>
       </div>
 
       <label>Nota tecnica<textarea id="zoneNote" rows="3" placeholder="Accesso, leva consigliata, rischio vernice, colla o spinta da dietro..."></textarea></label>
 
+      <div class="pdr-zone-box">
+        <div class="pdr-zone-head">
+          <div>
+            <h3>Analisi PDR zona</h3>
+            <p class="small">Generata con regole tecniche locali in base a pannello, difficoltà, profondità, tensione e vernice.</p>
+          </div>
+          <button id="zoneAnalyzePdr" type="button" class="btn ai small-btn">Rigenera analisi</button>
+        </div>
+        <div id="zonePdrBox" class="pdr-zone-result"></div>
+      </div>
+
       <div class="real-upload-box compact-top">
         <strong>Foto collegate alla zona</strong>
         <p class="small">Puoi scattare foto o prenderle dalla galleria. Verranno salvate dentro questa pratica e collegate al punto 3D.</p>
+        <label>Tipo delle prossime foto
+          <select id="zonePhotoKind">
+            <option value="prima">Prima</option>
+            <option value="dopo">Dopo</option>
+            <option value="generale">Generale</option>
+          </select>
+        </label>
         <label>Scatta foto zona
           <input id="zoneCameraInput" type="file" accept="image/*" capture="environment" multiple>
         </label>
@@ -1015,7 +1165,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
 (() => {
   "use strict";
 
-  const VERSION = "4.2.0";
+  const VERSION = "4.3.0";
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -1401,7 +1551,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
 
   const STORAGE_DRAFT = "dentvision_v4_draft";
   const STORAGE_ARCHIVE = "dentvision_v4_archive";
-  const VERSION = "4.2.0";
+  const VERSION = "4.3.0";
 
   const $ = (id) => document.getElementById(id);
   const dom = {};
@@ -1410,7 +1560,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     "clientName", "phone", "email", "carModel", "plate", "city", "status", "priority", "eventDate", "appointment", "insurer", "claimCode", "nextAction",
     "photoInput", "cameraInput", "analyzePhoto", "clearDetections", "sensitivity", "sensitivityText", "panelWidthCm", "activePanel", "engineStatus",
     "activePhotoName", "photoDentCount", "photoQuality", "photoCanvas", "canvasHint", "downloadMarkedPhoto", "detectionsList", "resultsNote",
-    "threeStatus", "car3d", "carMarkers", "panelSummary", "zonesList", "zoneDialog", "zoneDialogTitle", "zonePanel", "zoneDents", "zoneDifficulty", "zoneReference", "zoneNote", "zoneCameraInput", "zonePhotoInput", "zonePhotosPreview", "zoneClose", "zoneSave", "zoneDelete", "manualDents", "globalDifficulty", "paintDamage", "finalPrice", "calculateQuote", "copySummary", "shareWhatsApp", "printReport", "quoteBox", "suggestedPrice", "estimatedHours", "quoteDents", "quoteBreakdown",
+    "threeStatus", "car3d", "carMarkers", "panelSummary", "zonesList", "pdrOverview", "pdrReport", "zoneDialog", "zoneDialogTitle", "zonePanel", "zoneDents", "zoneDifficulty", "zoneReference", "zoneDiameter", "zoneDepth", "zoneTension", "zonePaint", "zoneAccess", "zoneNote", "zoneAnalyzePdr", "zonePdrBox", "zonePhotoKind", "zoneCameraInput", "zonePhotoInput", "zonePhotosPreview", "zoneClose", "zoneSave", "zoneDelete", "manualDents", "globalDifficulty", "paintDamage", "finalPrice", "calculateQuote", "copySummary", "shareWhatsApp", "printReport", "quoteBox", "suggestedPrice", "estimatedHours", "quoteDents", "quoteBreakdown",
     "caseNotes", "exportJson", "exportCsv", "importBackup", "search", "statusFilter", "archiveCount", "leads", "toast"
   ];
 
@@ -1597,10 +1747,16 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
   }
 
   function estimateHours(count = totalDents()) {
+    const zoneTime = (state.zones || []).reduce((sum, zone) => {
+      const pdr = zone.pdr || analyzeZonePdr(zone);
+      return sum + Number(pdr.timeHours || 0);
+    }, 0);
+    const photoDents = state.photos.reduce((sum, photo) => sum + (photo.detections?.length || 0), 0);
+    const manual = Math.max(0, Number(state.manualDents || 0));
     const hard = hardDents();
     const medium = mediumDents();
-    const base = count * 0.035 + medium * 0.018 + hard * 0.04;
-    const diff = state.globalDifficulty === "difficile" ? 1.18 : state.globalDifficulty === "molto_difficile" ? 1.36 : 1;
+    const base = zoneTime + (photoDents + manual) * 0.035 + medium * 0.01 + hard * 0.018;
+    const diff = state.globalDifficulty === "difficile" ? 1.12 : state.globalDifficulty === "molto_difficile" ? 1.24 : 1;
     return Math.max(count ? 0.5 : 0, base * diff);
   }
 
@@ -1627,6 +1783,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     renderPanelSummary();
     renderZonesList();
     renderCarMarkers();
+    renderPdrReport();
     renderArchive();
   }
 
@@ -1828,6 +1985,190 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
       .join(" · ");
   }
 
+
+  function readZoneDialogValues(base = {}) {
+    return {
+      ...base,
+      panel: dom.zonePanel?.value || base.panel || "Da definire",
+      dents: Math.max(1, Number(dom.zoneDents?.value || base.dents || 1)),
+      difficulty: dom.zoneDifficulty?.value || base.difficulty || "medium",
+      reference: dom.zoneReference?.value || base.reference || "",
+      diameter: Math.max(3, Number(dom.zoneDiameter?.value || base.diameter || 18)),
+      depth: dom.zoneDepth?.value || base.depth || "media",
+      tension: dom.zoneTension?.value || base.tension || "nessuna",
+      paint: dom.zonePaint?.value || base.paint || "integra",
+      access: dom.zoneAccess?.value || base.access || "auto",
+      note: dom.zoneNote?.value || base.note || "",
+      photos: base.photos || []
+    };
+  }
+
+  function zonePhotoCounts(zone) {
+    const counts = { prima: 0, dopo: 0, generale: 0 };
+    for (const photo of zone.photos || []) {
+      const key = photo.kind === "dopo" ? "dopo" : photo.kind === "prima" ? "prima" : "generale";
+      counts[key] += 1;
+    }
+    return counts;
+  }
+
+  function analyzeZonePdr(zone = {}) {
+    const panel = zone.panel || "Da definire";
+    const dents = Math.max(1, Number(zone.dents || 1));
+    const diameter = Math.max(3, Number(zone.diameter || 18));
+    const difficulty = zone.difficulty || "medium";
+    const depth = zone.depth || "media";
+    const tension = zone.tension || "nessuna";
+    const paint = zone.paint || "integra";
+    const access = zone.access || "auto";
+
+    const panelName = panel.toLowerCase();
+    let panelFactor = 1;
+    if (panelName.includes("porta")) panelFactor = 1.18;
+    else if (panelName.includes("parafango")) panelFactor = 1.25;
+    else if (panelName.includes("fiancata")) panelFactor = 1.12;
+    else if (panelName.includes("tetto")) panelFactor = 1.1;
+    else if (panelName.includes("cofano")) panelFactor = 1.02;
+    else if (panelName.includes("baule")) panelFactor = 1.06;
+
+    const diffFactor = difficulty === "hard" ? 1.55 : difficulty === "medium" ? 1.12 : 0.84;
+    const depthFactor = depth === "forte" ? 1.45 : depth === "media" ? 1.12 : 0.88;
+    const diameterFactor = diameter >= 45 ? 1.28 : diameter >= 28 ? 1.12 : diameter <= 12 ? 0.85 : 1;
+    const tensionFactor = tension === "nervatura" ? 1.38 : tension === "marcata" ? 1.28 : tension === "lieve" ? 1.1 : 1;
+    const paintFactor = paint === "danneggiata" ? 1.35 : paint === "da_valutare" ? 1.16 : 1;
+    const multiplier = panelFactor * diffFactor * depthFactor * diameterFactor * tensionFactor * paintFactor;
+    const timeHours = Math.max(0.2, dents * 0.045 * multiplier);
+
+    let riskScore = 10;
+    if (difficulty === "medium") riskScore += 14;
+    if (difficulty === "hard") riskScore += 30;
+    if (depth === "media") riskScore += 10;
+    if (depth === "forte") riskScore += 24;
+    if (diameter >= 30) riskScore += 8;
+    if (diameter >= 50) riskScore += 16;
+    if (tension === "lieve") riskScore += 8;
+    if (tension === "marcata") riskScore += 22;
+    if (tension === "nervatura") riskScore += 26;
+    if (paint === "da_valutare") riskScore += 18;
+    if (paint === "danneggiata") riskScore += 38;
+    if (panelName.includes("parafango")) riskScore += 8;
+    if (panelName.includes("porta")) riskScore += 6;
+    riskScore = Math.min(100, Math.round(riskScore));
+
+    const risk = riskScore >= 70 ? "Alto" : riskScore >= 40 ? "Medio" : "Basso";
+    const riskClass = risk === "Alto" ? "risk-high" : risk === "Medio" ? "risk-medium" : "risk-low";
+
+    let resolvedAccess = access;
+    if (resolvedAccess === "auto") {
+      if (paint === "danneggiata" || tension === "nervatura") resolvedAccess = "misto";
+      else if (panelName.includes("porta") || panelName.includes("fiancata")) resolvedAccess = difficulty === "hard" ? "misto" : "dietro";
+      else if (panelName.includes("tetto")) resolvedAccess = dents > 25 ? "smontaggio" : "dietro";
+      else if (panelName.includes("parafango")) resolvedAccess = "misto";
+      else resolvedAccess = "dietro";
+    }
+
+    let tool = "Lampada PDR, leva media, punta morbida e knockdown fine";
+    if (resolvedAccess === "colla") tool = "Kit colla PDR, tabs morbidi/medi, mini-lifter o martello inerziale leggero, knockdown";
+    if (resolvedAccess === "misto") tool = "Leva PDR dove c'è accesso + tiro con colla sulle zone chiuse, finitura con knockdown";
+    if (resolvedAccess === "smontaggio") tool = "Smontaggio rivestimento, aste lunghe/whale tail, lampada lineare e knockdown";
+    if (resolvedAccess === "dietro") {
+      if (panelName.includes("tetto")) tool = "Aste lunghe o whale tail, lampada lineare, spinta progressiva e knockdown";
+      else if (panelName.includes("porta")) tool = "Barra porta con protezione vetro, leva media, punta morbida e knockdown";
+      else if (panelName.includes("cofano")) tool = "Leva sottocofano, punta morbida, controllo riflesso e knockdown";
+      else if (panelName.includes("parafango")) tool = "Leva corta/uncino più colla sui punti senza accesso, knockdown controllato";
+    }
+
+    let direction = "Lavora dal bordo esterno verso il centro, micro-spinte progressive, controllo continuo della linea riflessa.";
+    if (tension === "marcata" || tension === "nervatura") direction = "Scarica prima i bordi e la linea di tensione, poi porta su il centro con spinte leggere. Evita colpi secchi sulla nervatura.";
+    if (depth === "forte") direction = "Prima rialza la zona bassa in più passaggi, poi chiudi le corone alte con knockdown morbido. Niente fretta, quella rovina più lavori della grandine.";
+
+    const recommendation = risk === "Alto"
+      ? "Controllo vernice obbligatorio, luce pulita e test iniziale su un punto laterale. Meglio preventivo prudente."
+      : risk === "Medio"
+        ? "Procedi con prova controllata, verifica accesso e rivaluta dopo i primi punti."
+        : "Zona adatta a PDR standard se l'accesso è reale e la vernice resta integra.";
+
+    return {
+      tool,
+      access: resolvedAccess,
+      direction,
+      risk,
+      riskClass,
+      riskScore,
+      timeHours: Number(timeHours.toFixed(2)),
+      recommendation,
+      multiplier: Number(multiplier.toFixed(2))
+    };
+  }
+
+  function renderZonePdrBox(pdr) {
+    if (!dom.zonePdrBox) return;
+    const advice = pdr || analyzeZonePdr(readZoneDialogValues(activeZone() || {}));
+    dom.zonePdrBox.innerHTML = `
+      <div><span>Attrezzo consigliato</span><strong>${escapeHtml(advice.tool)}</strong></div>
+      <div><span>Accesso</span><strong>${escapeHtml(accessLabel(advice.access))}</strong></div>
+      <div><span>Direzione lavoro</span><strong>${escapeHtml(advice.direction)}</strong></div>
+      <div><span>Rischio vernice</span><strong class="${escapeHtml(advice.riskClass)}">${escapeHtml(advice.risk)} · ${advice.riskScore}/100</strong></div>
+      <div><span>Tempo zona</span><strong>${formatNumber(advice.timeHours, 1)} h</strong></div>
+      <div><span>Nota operativa</span><strong>${escapeHtml(advice.recommendation)}</strong></div>
+    `;
+  }
+
+  function accessLabel(value) {
+    return value === "dietro" ? "Da dietro con leva" : value === "colla" ? "Tiro con colla" : value === "misto" ? "Misto leva + colla" : value === "smontaggio" ? "Smontaggio consigliato" : "Da valutare";
+  }
+
+  function renderPdrReport() {
+    if (!dom.pdrReport || !dom.pdrOverview) return;
+    const zones = state.zones || [];
+    if (!zones.length) {
+      dom.pdrOverview.innerHTML = `<div class="pdr-mini-card"><span>Zone analizzate</span><strong>0</strong></div><div class="pdr-mini-card"><span>Tempo PDR</span><strong>—</strong></div><div class="pdr-mini-card"><span>Rischi alti</span><strong>0</strong></div><div class="pdr-mini-card"><span>Foto prima/dopo</span><strong>0/0</strong></div>`;
+      dom.pdrReport.innerHTML = `<div class="mini-note">Tocca la macchina 3D, crea una zona e salva: qui comparirà l'analisi tecnica per ogni pannello.</div>`;
+      return;
+    }
+    let totalTime = 0;
+    let highRisk = 0;
+    let before = 0;
+    let after = 0;
+    for (const zone of zones) {
+      zone.pdr = zone.pdr || analyzeZonePdr(zone);
+      totalTime += Number(zone.pdr.timeHours || 0);
+      if (zone.pdr.risk === "Alto") highRisk += 1;
+      const counts = zonePhotoCounts(zone);
+      before += counts.prima;
+      after += counts.dopo;
+    }
+    dom.pdrOverview.innerHTML = `
+      <div class="pdr-mini-card"><span>Zone analizzate</span><strong>${zones.length}</strong></div>
+      <div class="pdr-mini-card"><span>Tempo PDR zone</span><strong>${formatNumber(totalTime, 1)} h</strong></div>
+      <div class="pdr-mini-card"><span>Rischi alti</span><strong>${highRisk}</strong></div>
+      <div class="pdr-mini-card"><span>Foto prima/dopo</span><strong>${before}/${after}</strong></div>
+    `;
+    dom.pdrReport.innerHTML = zones.map((zone, index) => {
+      const pdr = zone.pdr || analyzeZonePdr(zone);
+      const counts = zonePhotoCounts(zone);
+      return `
+        <article class="pdr-card">
+          <div class="pdr-card-head">
+            <div>
+              <div class="pdr-card-title">Zona ${index + 1} · ${escapeHtml(zone.panel || "Da definire")}</div>
+              <div class="mini-note">${Math.max(1, Number(zone.dents || 1))} bolli · diametro medio ${escapeHtml(zone.diameter || 18)} mm · profondità ${escapeHtml(zone.depth || "media")} · ${counts.prima} prima / ${counts.dopo} dopo</div>
+            </div>
+            <span class="difficulty-tag ${escapeHtml(zone.difficulty || "medium")}">${difficultyLabel(zone.difficulty)}</span>
+          </div>
+          <div class="pdr-grid">
+            <div class="pdr-item"><span>Attrezzo</span><strong>${escapeHtml(pdr.tool)}</strong></div>
+            <div class="pdr-item"><span>Accesso</span><strong>${escapeHtml(accessLabel(pdr.access))}</strong></div>
+            <div class="pdr-item"><span>Rischio</span><strong class="${escapeHtml(pdr.riskClass)}">${escapeHtml(pdr.risk)} · ${pdr.riskScore}/100</strong></div>
+            <div class="pdr-item"><span>Direzione</span><strong>${escapeHtml(pdr.direction)}</strong></div>
+            <div class="pdr-item"><span>Tempo</span><strong>${formatNumber(pdr.timeHours, 1)} h</strong></div>
+            <div class="pdr-item"><span>Nota</span><strong>${escapeHtml(pdr.recommendation)}</strong></div>
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
   function difficultyLabel(value) {
     return value === "easy" ? "Facile" : value === "hard" ? "Difficile" : "Media";
   }
@@ -1856,7 +2197,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
         <div class="zone-dot ${escapeHtml(zone.difficulty || "medium")}">${index + 1}</div>
         <div>
           <strong>${escapeHtml(zone.panel || "Da definire")} · ${Math.max(1, Number(zone.dents || 1))} bolli</strong>
-          <span>${escapeHtml(zone.reference || "Nessun riferimento")} · ${difficultyLabel(zone.difficulty)} · ${zone.photos?.length || 0} foto</span>
+          <span>${escapeHtml(zone.reference || "Nessun riferimento")} · ${difficultyLabel(zone.difficulty)} · ${zone.photos?.length || 0} foto · rischio ${escapeHtml(zone.pdr?.risk || analyzeZonePdr(zone).risk)}</span>
         </div>
         <button class="btn ghost small-btn" type="button" data-open-zone="${escapeHtml(zone.id)}">Apri</button>
       </article>
@@ -1881,7 +2222,13 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
       dents: 1,
       difficulty: "medium",
       reference: "",
+      diameter: 18,
+      depth: "media",
+      tension: "nessuna",
+      paint: "integra",
+      access: "auto",
       note: "",
+      pdr: null,
       photos: [],
       createdAt: new Date().toISOString()
     };
@@ -1903,7 +2250,14 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     dom.zoneDents.value = Math.max(1, Number(zone.dents || 1));
     dom.zoneDifficulty.value = zone.difficulty || "medium";
     dom.zoneReference.value = zone.reference || "";
+    dom.zoneDiameter.value = Math.max(3, Number(zone.diameter || 18));
+    dom.zoneDepth.value = zone.depth || "media";
+    dom.zoneTension.value = zone.tension || "nessuna";
+    dom.zonePaint.value = zone.paint || "integra";
+    dom.zoneAccess.value = zone.access || "auto";
     dom.zoneNote.value = zone.note || "";
+    zone.pdr = zone.pdr || analyzeZonePdr(zone);
+    renderZonePdrBox(zone.pdr);
     renderZonePhotos();
     if (dom.zoneDialog?.showModal) dom.zoneDialog.showModal();
     else dom.zoneDialog?.setAttribute("open", "open");
@@ -1916,7 +2270,13 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     zone.dents = Math.max(1, Number(dom.zoneDents.value || 1));
     zone.difficulty = dom.zoneDifficulty.value || "medium";
     zone.reference = dom.zoneReference.value || "";
+    zone.diameter = Math.max(3, Number(dom.zoneDiameter.value || 18));
+    zone.depth = dom.zoneDepth.value || "media";
+    zone.tension = dom.zoneTension.value || "nessuna";
+    zone.paint = dom.zonePaint.value || "integra";
+    zone.access = dom.zoneAccess.value || "auto";
     zone.note = dom.zoneNote.value || "";
+    zone.pdr = analyzeZonePdr(zone);
     zone.updatedAt = new Date().toISOString();
     saveDraft();
     updateUI();
@@ -1946,6 +2306,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
       zone.photos.push({
         id: crypto.randomUUID ? crypto.randomUUID() : `zphoto-${Date.now()}-${Math.random()}`,
         name: file.name || "foto-zona.jpg",
+        kind: dom.zonePhotoKind?.value || "prima",
         type: file.type,
         size: file.size,
         dataUrl,
@@ -1970,6 +2331,7 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     dom.zonePhotosPreview.innerHTML = zone.photos.map((photo) => `
       <div class="zone-photo-card">
         <img src="${photo.dataUrl}" alt="${escapeHtml(photo.name || "Foto zona")}">
+        <span class="photo-kind-badge">${escapeHtml(photo.kind || "generale")}</span>
         <button type="button" data-remove-zone-photo="${escapeHtml(photo.id)}" aria-label="Rimuovi foto">×</button>
       </div>
     `).join("");
@@ -2031,6 +2393,10 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
       `Foto: ${totalAttachedPhotos()}`,
       `Stima lavoro: ${formatNumber(estimateHours(), 1)} h`,
       `Preventivo: ${priceText}`,
+      ...(state.zones || []).map((zone, index) => {
+        const pdr = zone.pdr || analyzeZonePdr(zone);
+        return `Zona ${index + 1}: ${zone.panel || "Da definire"} · ${Math.max(1, Number(zone.dents || 1))} bolli · attrezzo: ${pdr.tool} · rischio: ${pdr.risk} · tempo: ${formatNumber(pdr.timeHours, 1)} h`;
+      }),
       state.nextAction ? `Prossima azione: ${state.nextAction}` : "",
       state.caseNotes ? `Note: ${state.caseNotes}` : ""
     ].filter(Boolean).join("\n");
@@ -2293,6 +2659,13 @@ model-viewer:not(:defined) .model-fallback { display: grid; }
     dom.zoneClose?.addEventListener("click", () => dom.zoneDialog?.close?.());
     dom.zoneSave?.addEventListener("click", saveZoneDialog);
     dom.zoneDelete?.addEventListener("click", deleteActiveZone);
+    dom.zoneAnalyzePdr?.addEventListener("click", () => {
+      const zone = activeZone();
+      if (!zone) return;
+      const temp = readZoneDialogValues(zone);
+      renderZonePdrBox(analyzeZonePdr(temp));
+      toast("Analisi PDR rigenerata per questa zona.");
+    });
     dom.zoneCameraInput?.addEventListener("change", (event) => addZonePhotos(event.target.files));
     dom.zonePhotoInput?.addEventListener("change", (event) => addZonePhotos(event.target.files));
     dom.zonePhotosPreview?.addEventListener("click", (event) => {
